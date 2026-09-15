@@ -18,8 +18,8 @@
         {% for e in edges %}
             <tr>
                 <td>{{ e['id'] }}</td>
-                <td>{{ e['from_label'] }}</td>
-                <td>{{ e['to_label'] }}</td>
+                <td class="col-wide">{{ e['from_label'] }}</td>
+                <td class="col-wide">{{ e['to_label'] }}</td>
                 <td>{{ mode_labels.get(e['mode'], e['mode']) }}</td>
                 <td>{{ e['minutes'] }}</td>
                 <td>{{ '예' if e['bidirectional'] else '아니오' }}</td>

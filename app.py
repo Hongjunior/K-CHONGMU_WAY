@@ -1,7 +1,7 @@
 from flask import Flask
 
 from db import engine, init_db
-from seed import seed_demo_data
+from seed import ensure_additional_demo_routes, seed_demo_data
 
 app = Flask(__name__)
 app.secret_key = "kchongmu-way-secret-key"
@@ -27,11 +27,12 @@ def root():
         return redirect(url_for("auth.login"))
     if not session.get("current_worksite_id"):
         return redirect(url_for("worksites.select_worksite"))
-    return redirect(url_for("mapview.overview"))
+    return redirect(url_for("schedules.day_view"))
 
 
 init_db()
 seed_demo_data(engine)
+ensure_additional_demo_routes(engine)
 
 if __name__ == "__main__":
     app.run(debug=True)

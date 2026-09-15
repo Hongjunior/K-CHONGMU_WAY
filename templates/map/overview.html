@@ -27,6 +27,17 @@
         {% else %}
         <p class="empty-state">등록된 건물이 없습니다.</p>
         {% endfor %}
+
+        {% for d in decorative_landmarks %}
+        <div
+            class="map-marker marker-building marker-building-disabled"
+            style="left: {{ d['pos_x'] }}%; top: {{ d['pos_y'] }}%;"
+            title="{{ d['name'] }} (사내 임직원 이용 시설 아님)"
+        >
+            <span class="marker-dot"></span>
+            <span class="marker-label">{{ d['name'] }}</span>
+        </div>
+        {% endfor %}
     </div>
 </section>
 

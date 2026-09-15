@@ -4,7 +4,10 @@
 <section class="page-section">
     <div class="page-header">
         <h2>내 일정</h2>
-        <a class="btn-primary" href="{{ url_for('schedules.new_schedule', date=date_str) }}">+ 일정 등록</a>
+        <a class="btn-primary" href="{{ url_for('schedules.new_schedule', date=date_str) }}">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="vertical-align: -2px; margin-right: 4px;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            일정 등록
+        </a>
     </div>
 
     <div class="date-nav">
@@ -37,7 +40,10 @@
 
         <div class="schedule-card status-{{ s.status }}">
             <div class="schedule-time">
-                <div class="schedule-start">{{ s.start_time }}</div>
+                <div class="schedule-start">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -1px; margin-right: 2px;"><circle cx="12" cy="12" r="9"></circle><polyline points="12 7 12 12 15 14"></polyline></svg>
+                    {{ s.start_time }}
+                </div>
                 {% if item.end_time %}<div class="schedule-end">~{{ item.end_time }}</div>{% endif %}
             </div>
             <div class="schedule-body">
@@ -47,10 +53,16 @@
                     <span class="badge badge-status-{{ s.status }}">{{ status_labels.get(s.status, s.status) }}</span>
                 </div>
                 {% if item.facility_label %}
-                <div class="schedule-loc">{{ item.facility_label }}</div>
+                <div class="schedule-loc">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -1px; margin-right: 3px;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                    {{ item.facility_label }}
+                </div>
                 {% endif %}
                 {% if s.memo %}
-                <div class="schedule-memo">{{ s.memo }}</div>
+                <div class="schedule-memo">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -1px; margin-right: 3px;"><path d="M4 4h16v12H8l-4 4V4z"></path></svg>
+                    {{ s.memo }}
+                </div>
                 {% endif %}
             </div>
             <div class="schedule-actions">

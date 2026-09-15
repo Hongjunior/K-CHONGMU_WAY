@@ -2,6 +2,8 @@ from flask import Blueprint, flash, redirect, render_template, request, session,
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 
+from werkzeug.security import generate_password_hash
+
 from blueprints.auth import admin_required, worksite_required
 from constants import (
     EDGE_MODE_LABELS,
@@ -59,6 +61,39 @@ def users_list():
             )
         ).mappings().all()
     return render_template("admin/users_list.html", users=users, role_labels=ROLE_LABELS)
+
+
+@admin_bp.route("/users/new", methods=["GET", "POST"])
+@admin_required
+def users_new():
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+        role = request.form.get("role", "user")
+        if role not in ROLE_LABELS:
+            role = "user"
+
+        if not username or not password:
+            flash("아이디와 비밀번호를 입력해주세요.", "error")
+            return redirect(url_for("admin.users_new"))
+
+        with engine.begin() as conn:
+            existing = conn.execute(
+                text("SELECT id FROM users WHERE username = :u"), {"u": username}
+            ).mappings().first()
+            if existing:
+                flash("이미 사용 중인 아이디입니다.", "error")
+                return redirect(url_for("admin.users_new"))
+
+            conn.execute(
+                text("INSERT INTO users (username, password_hash, role) VALUES (:u, :p, :r)"),
+                {"u": username, "p": generate_password_hash(password), "r": role},
+            )
+
+        flash("사용자가 추가되었습니다.", "success")
+        return redirect(url_for("admin.users_list"))
+
+    return render_template("admin/users_form.html", role_labels=ROLE_LABELS)
 
 
 @admin_bp.route("/users/<int:user_id>/toggle-role", methods=["POST"])

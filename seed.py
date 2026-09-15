@@ -117,6 +117,10 @@ def seed_demo_data(engine):
                 "name": "식당동-A동 순환 셔틀", "dep": "식당동 셔틀 승하차장", "arr": "A동 정문 셔틀장",
                 "travel": 9, "wait": 5, "start": "08:00", "end": "18:30", "interval": 30,
             },
+            {
+                "name": "A동-C동 급행 셔틀", "dep": "A동 정문 셔틀장", "arr": "C동 정문 셔틀장",
+                "travel": 15, "wait": 8, "start": "07:00", "end": "21:00", "interval": 40,
+            },
         ]
         route_ids = {}
         for r in route_plan:
@@ -205,3 +209,72 @@ def seed_demo_data(engine):
                 text("INSERT INTO worksites (name, description) VALUES (:n, :d)"),
                 {"n": name, "d": desc},
             )
+
+
+def ensure_additional_demo_routes(engine):
+    """Idempotent top-up for demo worksites that were already seeded before a new
+    demo shuttle route was added here, so a live/already-seeded database (e.g. the
+    deployed Supabase instance) picks up the new route without a full reseed."""
+    with engine.begin() as conn:
+        worksite_id = conn.execute(
+            text("SELECT id FROM worksites WHERE name = :n"),
+            {"n": "삼성전자 WS센터 (수원)"},
+        ).scalar()
+        if not worksite_id:
+            return
+
+        existing = conn.execute(
+            text("SELECT id FROM shuttle_routes WHERE worksite_id = :w AND route_name = :n"),
+            {"w": worksite_id, "n": "A동-C동 급행 셔틀"},
+        ).scalar()
+        if existing:
+            return
+
+        dep_id = conn.execute(
+            text(
+                "SELECT fac.id FROM facilities fac JOIN floors fl ON fl.id = fac.floor_id "
+                "WHERE fl.building_id IN (SELECT id FROM buildings WHERE worksite_id = :w) "
+                "AND fac.name = :n"
+            ),
+            {"w": worksite_id, "n": "A동 정문 셔틀장"},
+        ).scalar()
+        arr_id = conn.execute(
+            text(
+                "SELECT fac.id FROM facilities fac JOIN floors fl ON fl.id = fac.floor_id "
+                "WHERE fl.building_id IN (SELECT id FROM buildings WHERE worksite_id = :w) "
+                "AND fac.name = :n"
+            ),
+            {"w": worksite_id, "n": "C동 정문 셔틀장"},
+        ).scalar()
+        if not dep_id or not arr_id:
+            return
+
+        route_id = conn.execute(
+            text(
+                "INSERT INTO shuttle_routes "
+                "(worksite_id, route_name, departure_facility_id, arrival_facility_id, "
+                " travel_minutes, waiting_minutes, operation_start, operation_end, interval_minutes) "
+                "VALUES (:w, :rn, :dep, :arr, :tm, :wm, :os, :oe, :iv) RETURNING id"
+            ),
+            {
+                "w": worksite_id,
+                "rn": "A동-C동 급행 셔틀",
+                "dep": dep_id,
+                "arr": arr_id,
+                "tm": 15,
+                "wm": 8,
+                "os": "07:00",
+                "oe": "21:00",
+                "iv": 40,
+            },
+        ).scalar()
+
+        conn.execute(
+            text(
+                "INSERT INTO move_edges "
+                "(worksite_id, from_node_type, from_node_id, to_node_type, to_node_id, "
+                " mode, minutes, bidirectional, shuttle_route_id) "
+                "VALUES (:w, 'facility', :f, 'facility', :t, 'shuttle', :min, :bd, :rid)"
+            ),
+            {"w": worksite_id, "f": dep_id, "t": arr_id, "min": 15 + 8, "bd": False, "rid": route_id},
+        )

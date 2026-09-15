@@ -22,12 +22,12 @@
                 {% endfor %}
             </defs>
             {% for seg in segments %}
-            <line
-                x1="{{ seg.from_x }}" y1="{{ seg.from_y }}"
-                x2="{{ seg.to_x }}" y2="{{ seg.to_y }}"
+            <polyline
+                points="{{ seg.points }}"
+                fill="none"
                 stroke="{{ seg.color }}" stroke-width="0.6"
                 marker-end="url(#arrow-{{ loop.index0 }})"
-            ><title>{{ seg.route_name }}: {{ seg.from_name }} → {{ seg.to_name }} · 이동 {{ seg.travel_minutes }}분 · 배차간격 {{ seg.interval_minutes }}분 · 운행 {{ seg.operation }}</title></line>
+            ><title>{{ seg.route_name }}: {{ seg.from_name }} → {{ seg.to_name }} · 이동 {{ seg.travel_minutes }}분 · 배차간격 {{ seg.interval_minutes }}분 · 운행 {{ seg.operation }}</title></polyline>
             {% endfor %}
         </svg>
 
@@ -35,6 +35,13 @@
         <div class="map-marker marker-building" style="left: {{ b['pos_x'] }}%; top: {{ b['pos_y'] }}%;">
             <span class="marker-dot"></span>
             <span class="marker-label">{{ b['name'] }}</span>
+        </div>
+        {% endfor %}
+
+        {% for d in decorative_landmarks %}
+        <div class="map-marker marker-building marker-building-disabled" style="left: {{ d['pos_x'] }}%; top: {{ d['pos_y'] }}%;" title="{{ d['name'] }} (사내 임직원 이용 시설 아님)">
+            <span class="marker-dot"></span>
+            <span class="marker-label">{{ d['name'] }}</span>
         </div>
         {% endfor %}
     </div>

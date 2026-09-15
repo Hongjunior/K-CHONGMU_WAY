@@ -10,6 +10,25 @@ from routing import generate_timetable, next_shuttle_departure
 
 mapview_bp = Blueprint("mapview", __name__, url_prefix="/map")
 
+# Landmarks that exist on the real, larger campus but are not part of the
+# limited set of buildings Etners staff actually use — shown on the map for
+# scale/realism only, never clickable and never tied to real building rows.
+DECORATIVE_LANDMARKS = [
+    {"name": "본관", "pos_x": 8, "pos_y": 8},
+    {"name": "연구동", "pos_x": 12, "pos_y": 60},
+    {"name": "제2연구센터", "pos_x": 35, "pos_y": 88},
+    {"name": "복지동", "pos_x": 65, "pos_y": 88},
+    {"name": "교육원", "pos_x": 50, "pos_y": 12},
+    {"name": "주차타워", "pos_x": 92, "pos_y": 65},
+]
+
+# Extra polyline via-points (map display only, not travel-time data) so some
+# shuttle routes visually bend through the decorative landmarks above instead
+# of every route being a flat straight line.
+ROUTE_VIA_POINTS = {
+    "A동-C동 급행 셔틀": [(50, 14)],
+}
+
 
 def _shuttle_routes_by_departure_facility(conn, worksite_id):
     rows = conn.execute(
@@ -71,6 +90,7 @@ def overview():
         worksite=worksite,
         buildings=buildings,
         building_first_floor=building_first_floor,
+        decorative_landmarks=DECORATIVE_LANDMARKS,
     )
 
 
@@ -190,6 +210,8 @@ def shuttle_map():
     palette = ["#FB8520", "#2f6feb", "#2e7d32", "#8e44ad", "#c0392b", "#00897b"]
     segments = []
     for i, r in enumerate(rows):
+        via = ROUTE_VIA_POINTS.get(r["route_name"], [])
+        points = [(r["dep_x"], r["dep_y"]), *via, (r["arr_x"], r["arr_y"])]
         segments.append(
             {
                 "route_name": r["route_name"],
@@ -199,15 +221,17 @@ def shuttle_map():
                 "operation": f"{r['operation_start']}~{r['operation_end']}",
                 "color": palette[i % len(palette)],
                 "from_name": r["dep_building_name"],
-                "from_x": r["dep_x"],
-                "from_y": r["dep_y"],
                 "to_name": r["arr_building_name"],
-                "to_x": r["arr_x"],
-                "to_y": r["arr_y"],
+                "points": " ".join(f"{x},{y}" for x, y in points),
             }
         )
 
-    return render_template("map/shuttle_map.html", buildings=buildings, segments=segments)
+    return render_template(
+        "map/shuttle_map.html",
+        buildings=buildings,
+        segments=segments,
+        decorative_landmarks=DECORATIVE_LANDMARKS,
+    )
 
 
 @mapview_bp.route("/search")
