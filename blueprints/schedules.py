@@ -446,6 +446,178 @@ def update_status(schedule_id):
     return redirect(url_for("schedules.day_view", date=date_str))
 
 
+def unread_notification_count(conn, user_id):
+    return conn.execute(
+        text("SELECT COUNT(*) AS c FROM notifications WHERE user_id = :u AND read_at IS NULL"),
+        {"u": user_id},
+    ).mappings().first()["c"]
+
+
+def _other_users(conn, exclude_user_id):
+    return conn.execute(
+        text("SELECT id, username FROM users WHERE id != :u ORDER BY username"),
+        {"u": exclude_user_id},
+    ).mappings().all()
+
+
+@schedules_bp.route("/<int:schedule_id>/share", methods=["GET", "POST"])
+@login_required
+@worksite_required
+def share_schedule(schedule_id):
+    with engine.connect() as conn:
+        schedule = conn.execute(
+            text("SELECT * FROM schedules WHERE id = :id AND user_id = :u"),
+            {"id": schedule_id, "u": _user_id()},
+        ).mappings().first()
+        if not schedule:
+            flash("일정을 찾을 수 없습니다.", "error")
+            return redirect(url_for("schedules.day_view"))
+        users = _other_users(conn, _user_id())
+
+    if request.method == "POST":
+        to_user_id = request.form.get("to_user_id", type=int)
+        if not any(u["id"] == to_user_id for u in users):
+            flash("공유받을 사용자를 올바르게 선택해주세요.", "error")
+            return redirect(url_for("schedules.share_schedule", schedule_id=schedule_id))
+
+        with engine.begin() as conn:
+            share_id = conn.execute(
+                text(
+                    "INSERT INTO schedule_shares "
+                    "(schedule_id, from_user_id, to_user_id, worksite_id, status) "
+                    "VALUES (:sid, :fu, :tu, :w, 'pending') RETURNING id"
+                ),
+                {"sid": schedule_id, "fu": _user_id(), "tu": to_user_id, "w": _worksite_id()},
+            ).scalar()
+            conn.execute(
+                text(
+                    "INSERT INTO notifications (user_id, type, message, related_share_id) "
+                    "VALUES (:u, 'share', :m, :sid)"
+                ),
+                {
+                    "u": to_user_id,
+                    "m": f"{session['username']}님이 '{schedule['title']}' 일정을 공유했습니다.",
+                    "sid": share_id,
+                },
+            )
+        flash("일정을 공유했습니다.", "success")
+        return redirect(url_for("schedules.day_view", date=schedule["date"]))
+
+    return render_template("schedules/share_form.html", schedule=schedule, users=users)
+
+
+@schedules_bp.route("/shares/<int:share_id>/accept", methods=["POST"])
+@login_required
+@worksite_required
+def accept_share(share_id):
+    with engine.begin() as conn:
+        share = conn.execute(
+            text("SELECT * FROM schedule_shares WHERE id = :id AND to_user_id = :u AND status = 'pending'"),
+            {"id": share_id, "u": _user_id()},
+        ).mappings().first()
+        if not share:
+            flash("이미 처리된 공유입니다.", "error")
+            return redirect(url_for("schedules.notifications_list"))
+
+        original = conn.execute(
+            text("SELECT * FROM schedules WHERE id = :id"), {"id": share["schedule_id"]}
+        ).mappings().first()
+        if not original:
+            conn.execute(
+                text("UPDATE schedule_shares SET status='declined' WHERE id=:id"), {"id": share_id}
+            )
+            flash("원본 일정을 찾을 수 없습니다.", "error")
+            return redirect(url_for("schedules.notifications_list"))
+
+        duplicate = conn.execute(
+            text(
+                "SELECT id FROM schedules WHERE user_id = :u AND date = :d AND start_time = :st "
+                "AND ((facility_id IS NULL AND :fac IS NULL) OR facility_id = :fac)"
+            ),
+            {
+                "u": _user_id(),
+                "d": original["date"],
+                "st": original["start_time"],
+                "fac": original["facility_id"],
+            },
+        ).mappings().first()
+
+        if duplicate:
+            conn.execute(
+                text("UPDATE schedule_shares SET status='declined' WHERE id=:id"), {"id": share_id}
+            )
+            flash("이미 동일한 일정이 있습니다.", "error")
+            return redirect(url_for("schedules.notifications_list"))
+
+        conn.execute(
+            text(
+                "INSERT INTO schedules "
+                "(user_id, worksite_id, title, date, start_time, duration_minutes, facility_id, "
+                " work_type, priority, memo) "
+                "VALUES (:u, :w, :t, :d, :st, :dur, :fac, :wt, :p, :m)"
+            ),
+            {
+                "u": _user_id(),
+                "w": share["worksite_id"],
+                "t": original["title"],
+                "d": original["date"],
+                "st": original["start_time"],
+                "dur": original["duration_minutes"],
+                "fac": original["facility_id"],
+                "wt": original["work_type"],
+                "p": original["priority"],
+                "m": original["memo"],
+            },
+        )
+        conn.execute(text("UPDATE schedule_shares SET status='accepted' WHERE id=:id"), {"id": share_id})
+
+    flash("공유받은 일정을 내 일정에 추가했습니다.", "success")
+    return redirect(url_for("schedules.notifications_list"))
+
+
+@schedules_bp.route("/shares/<int:share_id>/decline", methods=["POST"])
+@login_required
+@worksite_required
+def decline_share(share_id):
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                "UPDATE schedule_shares SET status='declined' "
+                "WHERE id=:id AND to_user_id=:u AND status='pending'"
+            ),
+            {"id": share_id, "u": _user_id()},
+        )
+    flash("공유를 삭제했습니다.", "success")
+    return redirect(url_for("schedules.notifications_list"))
+
+
+@schedules_bp.route("/notifications")
+@login_required
+def notifications_list():
+    with engine.begin() as conn:
+        rows = conn.execute(
+            text(
+                "SELECT n.*, ss.status AS share_status FROM notifications n "
+                "LEFT JOIN schedule_shares ss ON ss.id = n.related_share_id "
+                "WHERE n.user_id = :u ORDER BY n.created_at DESC, n.id DESC"
+            ),
+            {"u": _user_id()},
+        ).mappings().all()
+
+        notifications = [
+            {**dict(r), "is_new": r["read_at"] is None} for r in rows
+        ]
+
+        unread_ids = [r["id"] for r in rows if r["read_at"] is None]
+        if unread_ids:
+            stmt = text(
+                f"UPDATE notifications SET read_at={NOW_EXPR} WHERE id IN :ids"
+            ).bindparams(bindparam("ids", expanding=True))
+            conn.execute(stmt, {"ids": unread_ids})
+
+    return render_template("schedules/notifications.html", notifications=notifications)
+
+
 @schedules_bp.route("/api/upcoming")
 @login_required
 @worksite_required

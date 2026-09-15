@@ -44,11 +44,14 @@
         <input type="hidden" name="facility_id" id="facility_id_input" value="{{ schedule['facility_id'] if schedule and schedule['facility_id'] else '' }}">
 
         <label>중요도</label>
-        <select name="priority">
+        <div class="priority-picker">
             {% for value, label in priorities %}
-            <option value="{{ value }}" {{ 'selected' if (schedule and schedule['priority'] == value) or (not schedule and value == 'normal') else '' }}>{{ label }}</option>
+            <label class="priority-pill priority-pill-{{ value }}">
+                <input type="radio" name="priority" value="{{ value }}" {{ 'checked' if (schedule and schedule['priority'] == value) or (not schedule and value == 'normal') else '' }}>
+                {{ label }}
+            </label>
             {% endfor %}
-        </select>
+        </div>
 
         <label>메모</label>
         <textarea name="memo" rows="3">{{ schedule['memo'] if schedule else '' }}</textarea>

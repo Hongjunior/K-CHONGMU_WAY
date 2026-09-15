@@ -7,10 +7,7 @@
         <div>
             <a class="btn-link" href="{{ url_for('mapview.day_route', date=date_str) }}">오늘 동선 지도 보기 →</a>
             &nbsp;
-            <a class="btn-primary" href="{{ url_for('schedules.new_schedule', date=date_str) }}">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="vertical-align: -2px; margin-right: 4px;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                일정 등록
-            </a>
+            <a class="btn-primary" href="{{ url_for('schedules.new_schedule', date=date_str) }}">일정 등록</a>
         </div>
     </div>
 
@@ -40,11 +37,13 @@
         <div class="travel-gap {{ 'warning' if item.warning else '' }} {{ 'unreachable' if item.unreachable else '' }}">
             {% if item.unreachable %}
                 이전 일정 장소에서 이동 경로 정보가 없습니다.
-            {% else %}
+            {% elif item.travel_minutes is not none %}
                 이동시간 약 {{ item.travel_minutes }}분 필요 · 일정 사이 여유 {{ item.gap_minutes }}분
                 {% if item.warning %}
                     <strong>— 이동시간이 부족할 수 있습니다!</strong>
                 {% endif %}
+            {% else %}
+                일정 사이 여유 {{ item.gap_minutes }}분
             {% endif %}
         </div>
         {% endif %}
@@ -60,21 +59,15 @@
             <div class="schedule-body">
                 <div class="schedule-title-row">
                     <span class="schedule-title">{{ s.title }}</span>
-                    <span class="badge">{{ priority_labels.get(s.priority, s.priority) }}</span>
+                    <span class="badge badge-priority-{{ s.priority }}">{{ priority_labels.get(s.priority, s.priority) }}</span>
                     <span class="badge badge-status-{{ s.status }}">{{ status_labels.get(s.status, s.status) }}</span>
                     {% if item.auto_placed %}<span class="badge badge-auto">자동배치</span>{% endif %}
                 </div>
                 {% if item.facility_label %}
-                <div class="schedule-loc">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -1px; margin-right: 3px;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-                    {{ item.facility_label }}
-                </div>
+                <div class="schedule-loc">{{ item.facility_label }}</div>
                 {% endif %}
                 {% if s.memo %}
-                <div class="schedule-memo">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -1px; margin-right: 3px;"><path d="M4 4h16v12H8l-4 4V4z"></path></svg>
-                    {{ s.memo }}
-                </div>
+                <div class="schedule-memo">{{ s.memo }}</div>
                 {% endif %}
             </div>
             <div class="schedule-actions">
@@ -92,6 +85,7 @@
                     <button type="submit" class="btn-edit {{ 'active' if s.status == 'on_hold' else '' }}">보류</button>
                 </form>
                 <a class="btn-edit" href="{{ url_for('schedules.edit_schedule', schedule_id=s.id) }}">수정</a>
+                <a class="btn-edit" href="{{ url_for('schedules.share_schedule', schedule_id=s.id) }}">공유</a>
                 <form action="{{ url_for('schedules.delete_schedule', schedule_id=s.id) }}" method="post" onsubmit="return confirm('삭제하시겠습니까?');">
                     <input type="hidden" name="date" value="{{ date_str }}">
                     <button type="submit" class="btn-delete">삭제</button>

@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="page-section">
+    <h2>일정 공유</h2>
+    <p class="page-hint">'{{ schedule['title'] }}' ({{ schedule['date'] }} {{ schedule['start_time'] or '시간 미정' }}) 일정을 공유합니다.</p>
+
+    <form action="{{ url_for('schedules.share_schedule', schedule_id=schedule['id']) }}" method="post" class="entity-form">
+        <label>공유받을 사용자</label>
+        <select name="to_user_id" required>
+            {% for u in users %}
+            <option value="{{ u['id'] }}">{{ u['username'] }}</option>
+            {% endfor %}
+        </select>
+
+        <div class="form-actions">
+            <button type="submit">공유하기</button>
+            <a href="{{ url_for('schedules.day_view', date=schedule['date']) }}" class="btn-cancel">취소</a>
+        </div>
+    </form>
+</section>
+
+{% endblock %}

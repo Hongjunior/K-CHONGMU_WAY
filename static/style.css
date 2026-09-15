@@ -15,6 +15,9 @@
 
 body {
     margin: 0;
+    display: flex;
+    align-items: stretch;
+    min-height: 100vh;
     font-family: "Segoe UI", "Malgun Gothic", sans-serif;
     background: var(--color-bg);
     color: var(--color-text);
@@ -24,81 +27,144 @@ a {
     color: inherit;
 }
 
-/* ---------- Top bar ---------- */
+/* ---------- Sidebar ---------- */
 
-.topbar {
+.sidebar {
+    width: 210px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    height: 100vh;
     display: flex;
-    align-items: center;
-    gap: 24px;
-    padding: 12px 24px;
+    flex-direction: column;
+    padding: 20px 16px;
     background: var(--color-primary);
     color: #fff;
 }
 
 .brand {
     display: flex;
-    align-items: center;
-    gap: 16px;
-    font-weight: 700;
-    font-size: 15px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    font-weight: 800;
+    font-size: 20px;
     text-decoration: none;
     color: #fff;
+    margin-bottom: 28px;
 }
 
 .brand img {
-    height: 20px;
+    height: 28px;
     width: auto;
     display: block;
 }
 
-.topnav {
+.sidenav {
     display: flex;
+    flex-direction: column;
     gap: 4px;
     flex: 1;
 }
 
-.topnav a {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    color: rgba(255,255,255,0.85);
+.sidenav a {
+    color: rgba(255,255,255,0.88);
     text-decoration: none;
-    font-size: 14px;
-    padding: 6px 12px;
+    font-size: 16px;
+    font-weight: 600;
+    padding: 10px 12px;
     border-radius: 8px;
 }
 
-.topnav a svg {
-    flex-shrink: 0;
-}
-
-.topnav a:hover {
+.sidenav a:hover {
     color: #fff;
     background: rgba(255,255,255,0.12);
 }
 
-.topnav a.active {
+.sidenav a.active {
     color: #fff;
     font-weight: 700;
     background: rgba(255,255,255,0.22);
 }
 
-.user-bar {
+.sidebar-footer {
     display: flex;
-    align-items: center;
+    flex-direction: column;
     gap: 10px;
-    font-size: 13px;
-    color: rgba(255,255,255,0.85);
+    padding-top: 16px;
+    border-top: 1px solid rgba(255,255,255,0.25);
+}
+
+.sidebar-bell {
+    position: relative;
+    align-self: flex-start;
+    font-size: 20px;
+    text-decoration: none;
+    line-height: 1;
+}
+
+.bell-dot {
+    position: absolute;
+    top: -2px;
+    right: -4px;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #e74c3c;
+    border: 1.5px solid var(--color-primary);
+}
+
+.user-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.9);
 }
 
 .btn-logout {
-    font-size: 12px;
-    padding: 5px 10px;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 6px 10px;
     border-radius: 6px;
     border: 1px solid rgba(255,255,255,0.5);
     background: transparent;
     color: #fff;
     cursor: pointer;
+}
+
+/* ---------- Status bar ---------- */
+
+.main-area {
+    flex: 1;
+    min-width: 0;
+}
+
+.status-bar {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 12px 24px;
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.status-date, .status-clock, .status-worksite {
+    color: var(--color-text);
+}
+
+.status-clock {
+    font-variant-numeric: tabular-nums;
+    color: var(--color-primary-dark);
+}
+
+.status-summary {
+    color: var(--color-text-muted);
+    font-weight: 500;
+    margin-left: auto;
 }
 
 /* ---------- Layout ---------- */
@@ -532,6 +598,44 @@ a {
     background-image: url('img/floor-bg.svg');
 }
 
+.map-zoom-inner {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    transform-origin: 0 0;
+    transition: transform 0.05s linear;
+}
+
+.map-zoom-controls {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    z-index: 6;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.map-zoom-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-text);
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+}
+
+.map-zoom-btn:hover {
+    background: var(--color-primary-light);
+}
+
 .map-marker {
     position: absolute;
     transform: translate(-50%, -50%);
@@ -600,6 +704,15 @@ a {
 
 .marker-facility.highlight .marker-dot {
     box-shadow: 0 0 0 5px rgba(251,133,32,0.35);
+}
+
+.marker-icon .marker-dot {
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
 }
 
 /* ---------- Room blocks (facilities drawn to scale on the floor plan) ---------- */
@@ -924,6 +1037,59 @@ a {
     color: #a6710b;
 }
 
+.badge-priority-low {
+    background: #e8f0fe;
+    color: #2f6feb;
+}
+
+.badge-priority-normal {
+    background: var(--color-bg);
+    color: var(--color-text-muted);
+}
+
+.badge-priority-high {
+    background: #fdeaea;
+    color: #c0392b;
+}
+
+.priority-picker {
+    display: flex;
+    gap: 8px;
+}
+
+.priority-pill {
+    flex: 1;
+    text-align: center;
+    padding: 8px 0;
+    border-radius: 8px;
+    border: 2px solid var(--color-border);
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--color-text-muted);
+}
+
+.priority-pill input {
+    display: none;
+}
+
+.priority-pill-low:has(input:checked) {
+    background: #e8f0fe;
+    border-color: #2f6feb;
+    color: #2f6feb;
+}
+
+.priority-pill-normal:has(input:checked) {
+    background: var(--color-primary-light);
+    border-color: var(--color-primary);
+    color: var(--color-primary-dark);
+}
+
+.priority-pill-high:has(input:checked) {
+    background: #fdeaea;
+    border-color: #c0392b;
+    color: #c0392b;
+}
+
 /* ---------- Shuttle info ---------- */
 
 .shuttle-card-list {
@@ -1104,6 +1270,49 @@ a {
     margin-left: 56px;
     font-size: 12px;
     color: var(--color-text-muted);
+}
+
+/* ---------- Notifications ---------- */
+
+.notif-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.notif-item {
+    background: var(--color-surface);
+    border-radius: 10px;
+    padding: 14px 16px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    border-left: 4px solid var(--color-primary);
+}
+
+.notif-item.read {
+    opacity: 0.5;
+    border-left-color: var(--color-border);
+}
+
+.notif-message {
+    font-size: 14px;
+    color: var(--color-text);
+}
+
+.notif-meta {
+    font-size: 12px;
+    color: var(--color-text-muted);
+    margin-top: 4px;
+}
+
+.notif-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.notif-actions form {
+    display: inline;
 }
 
 /* ---------- Reminder toast ---------- */

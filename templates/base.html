@@ -7,63 +7,85 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-<header class="topbar">
+
+{% if session.user_id %}
+<aside class="sidebar">
     <a class="brand" href="{{ url_for('root') }}">
         <img src="{{ url_for('static', filename='img/etners_logo.png') }}" alt="etners">
         <span>K-총무 WAY</span>
     </a>
 
-    {% if session.user_id %}
-    <nav class="topnav">
-        <a href="{{ url_for('schedules.day_view') }}" class="{{ 'active' if request.blueprint == 'schedules' else '' }}">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-            일정
-        </a>
-        <a href="{{ url_for('mapview.overview') }}" class="{{ 'active' if request.endpoint in ('mapview.overview', 'mapview.floor_view', 'mapview.search') else '' }}">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>
-            지도
-        </a>
-        <a href="{{ url_for('mapview.shuttles') }}" class="{{ 'active' if request.endpoint in ('mapview.shuttles', 'mapview.shuttle_map') else '' }}">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="2"></rect><circle cx="7.5" cy="18" r="1.5"></circle><circle cx="16.5" cy="18" r="1.5"></circle><line x1="3" y1="11" x2="21" y2="11"></line></svg>
-            셔틀
-        </a>
+    <nav class="sidenav">
+        <a href="{{ url_for('schedules.day_view') }}" class="{{ 'active' if request.endpoint in ('schedules.day_view',) else '' }}">일정</a>
+        <a href="{{ url_for('mapview.overview') }}" class="{{ 'active' if request.endpoint in ('mapview.overview', 'mapview.floor_view', 'mapview.search', 'mapview.day_route') else '' }}">지도</a>
+        <a href="{{ url_for('mapview.shuttles') }}" class="{{ 'active' if request.endpoint in ('mapview.shuttles', 'mapview.shuttle_map') else '' }}">셔틀</a>
         {% if session.role == 'admin' %}
-        <a href="{{ url_for('admin.dashboard') }}" class="{{ 'active' if request.blueprint == 'admin' else '' }}">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l7 4v6c0 5-3.5 8-7 10-3.5-2-7-5-7-10V6l7-4z"></path></svg>
-            관리자
-        </a>
+        <a href="{{ url_for('admin.dashboard') }}" class="{{ 'active' if request.blueprint == 'admin' else '' }}">관리자</a>
         {% endif %}
-        <a href="{{ url_for('worksites.select_worksite') }}" class="{{ 'active' if request.blueprint == 'worksites' else '' }}">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5"></path><path d="M8 21H3v-5"></path><path d="M21 3l-7 7"></path><path d="M3 21l7-7"></path></svg>
-            사업장 전환
-        </a>
+        <a href="{{ url_for('worksites.select_worksite') }}" class="{{ 'active' if request.blueprint == 'worksites' else '' }}">사업장 전환</a>
     </nav>
-    <div class="user-bar">
+
+    <div class="sidebar-footer">
+        <a class="sidebar-bell" href="{{ url_for('schedules.notifications_list') }}" title="알림">
+            🔔
+            {% if header_unread_count %}<span class="bell-dot"></span>{% endif %}
+        </a>
         <span class="user-name">{{ session.username }}님 ({{ '관리자' if session.role == 'admin' else '사용자' }})</span>
         <form action="{{ url_for('auth.logout') }}" method="post">
             <button type="submit" class="btn-logout">로그아웃</button>
         </form>
     </div>
+</aside>
+{% endif %}
+
+<div class="main-area">
+    {% if session.user_id %}
+    <header class="status-bar">
+        <span class="status-date">{{ header_today }}</span>
+        <span class="status-clock" id="live-clock"></span>
+        {% if header_worksite_name %}<span class="status-worksite">{{ header_worksite_name }}</span>{% endif %}
+        <span class="status-summary">
+            {% if header_has_schedules %}
+                {% for value, label in header_categories %}
+                    {% if header_category_counts.get(value, 0) > 0 %}{{ label }} {{ header_category_counts.get(value, 0) }} · {% endif %}
+                {% endfor %}완료 {{ header_done_count }}
+            {% else %}
+                오늘 등록된 일정 없음
+            {% endif %}
+        </span>
+    </header>
     {% endif %}
-</header>
 
-<div class="container">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            <div class="flash-list">
-            {% for category, message in messages %}
-                <div class="flash flash-{{ category }}">{{ message }}</div>
-            {% endfor %}
-            </div>
-        {% endif %}
-    {% endwith %}
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-list">
+                {% for category, message in messages %}
+                    <div class="flash flash-{{ category }}">{{ message }}</div>
+                {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
 
-    {% block content %}{% endblock %}
+        {% block content %}{% endblock %}
+    </div>
 </div>
 
 {% if session.user_id %}
 <div id="reminder-toast-root"></div>
 <script src="{{ url_for('static', filename='reminder.js') }}" data-upcoming-url="{{ url_for('schedules.api_upcoming') }}"></script>
+<script>
+(function () {
+    var el = document.getElementById('live-clock');
+    if (!el) return;
+    function tick() {
+        el.textContent = new Date().toLocaleTimeString('ko-KR', { hour12: false });
+    }
+    tick();
+    setInterval(tick, 1000);
+})();
+</script>
 {% endif %}
+<script src="{{ url_for('static', filename='map_zoom.js') }}"></script>
 </body>
 </html>

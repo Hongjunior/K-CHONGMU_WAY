@@ -1,4 +1,8 @@
-from flask import Flask
+from collections import Counter
+from datetime import date as date_cls
+
+from flask import Flask, session
+from sqlalchemy import text
 
 from db import engine, init_db
 from seed import ensure_additional_demo_routes, seed_demo_data
@@ -10,13 +14,42 @@ from blueprints.auth import auth_bp
 from blueprints.worksites import worksites_bp
 from blueprints.admin import admin_bp
 from blueprints.mapview import mapview_bp
-from blueprints.schedules import schedules_bp
+from blueprints.schedules import get_day_items, schedules_bp, unread_notification_count
+from constants import SCHEDULE_CATEGORIES
 
 app.register_blueprint(auth_bp)
 app.register_blueprint(worksites_bp)
 app.register_blueprint(admin_bp)
 app.register_blueprint(mapview_bp)
 app.register_blueprint(schedules_bp)
+
+
+@app.context_processor
+def inject_header_status():
+    if not session.get("user_id") or not session.get("current_worksite_id"):
+        return {}
+
+    today = date_cls.today().isoformat()
+    with engine.connect() as conn:
+        items = get_day_items(conn, session["user_id"], session["current_worksite_id"], today)
+        worksite = conn.execute(
+            text("SELECT name FROM worksites WHERE id = :id"),
+            {"id": session["current_worksite_id"]},
+        ).mappings().first()
+        unread_count = unread_notification_count(conn, session["user_id"])
+
+    category_counts = Counter((it["schedule"]["work_type"] or "etc") for it in items)
+    done_count = sum(1 for it in items if it["schedule"]["status"] == "done")
+
+    return {
+        "header_today": today,
+        "header_worksite_name": worksite["name"] if worksite else None,
+        "header_categories": SCHEDULE_CATEGORIES,
+        "header_category_counts": category_counts,
+        "header_done_count": done_count,
+        "header_has_schedules": bool(items),
+        "header_unread_count": unread_count,
+    }
 
 
 @app.route("/")

@@ -36,6 +36,7 @@ TS = (
 ACTIVE_TRUE = "BOOLEAN NOT NULL DEFAULT TRUE" if IS_POSTGRES else "INTEGER NOT NULL DEFAULT 1"
 BOOL_TRUE = ACTIVE_TRUE  # alias, same column definition used for any boolean-flag column
 JSON_TYPE = "JSONB" if IS_POSTGRES else "TEXT"
+NULLABLE_TS = "TIMESTAMP" if IS_POSTGRES else "TEXT"
 
 
 def init_db():
@@ -207,6 +208,30 @@ def init_db():
             )
         """))
 
+        conn.execute(text(f"""
+            CREATE TABLE IF NOT EXISTS schedule_shares (
+                {PK},
+                schedule_id INTEGER NOT NULL REFERENCES schedules(id),
+                from_user_id INTEGER NOT NULL REFERENCES users(id),
+                to_user_id INTEGER NOT NULL REFERENCES users(id),
+                worksite_id INTEGER NOT NULL REFERENCES worksites(id),
+                status TEXT NOT NULL DEFAULT 'pending',
+                created_at {TS}
+            )
+        """))
+
+        conn.execute(text(f"""
+            CREATE TABLE IF NOT EXISTS notifications (
+                {PK},
+                user_id INTEGER NOT NULL REFERENCES users(id),
+                type TEXT NOT NULL,
+                message TEXT NOT NULL,
+                related_share_id INTEGER REFERENCES schedule_shares(id),
+                read_at {NULLABLE_TS},
+                created_at {TS}
+            )
+        """))
+
         for stmt in [
             "CREATE INDEX IF NOT EXISTS idx_buildings_worksite ON buildings(worksite_id)",
             "CREATE INDEX IF NOT EXISTS idx_floors_building ON floors(building_id)",
@@ -215,5 +240,7 @@ def init_db():
             "CREATE INDEX IF NOT EXISTS idx_shuttle_routes_worksite ON shuttle_routes(worksite_id)",
             "CREATE INDEX IF NOT EXISTS idx_schedules_user_date ON schedules(user_id, date)",
             "CREATE INDEX IF NOT EXISTS idx_notices_worksite ON notices(worksite_id)",
+            "CREATE INDEX IF NOT EXISTS idx_schedule_shares_to_user ON schedule_shares(to_user_id)",
+            "CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id)",
         ]:
             conn.execute(text(stmt))
