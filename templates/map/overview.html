@@ -4,6 +4,7 @@
 <section class="page-section">
     <div class="page-header">
         <h2>{{ worksite['name'] }} - 사업장 지도</h2>
+        <a class="btn-link" href="{{ url_for('mapview.shuttle_map') }}">셔틀 전체 동선 보기 →</a>
     </div>
 
     <form action="{{ url_for('mapview.search') }}" method="get" class="map-search-bar">

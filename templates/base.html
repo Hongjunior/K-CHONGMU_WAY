@@ -8,7 +8,10 @@
 </head>
 <body>
 <header class="topbar">
-    <a class="brand" href="{{ url_for('root') }}">K-총무 WAY</a>
+    <a class="brand" href="{{ url_for('root') }}">
+        <img src="{{ url_for('static', filename='img/etners_logo.png') }}" alt="etners">
+        <span>K-총무 WAY</span>
+    </a>
 
     {% if session.user_id %}
     <nav class="topnav">
@@ -42,5 +45,10 @@
 
     {% block content %}{% endblock %}
 </div>
+
+{% if session.user_id %}
+<div id="reminder-toast-root"></div>
+<script src="{{ url_for('static', filename='reminder.js') }}" data-upcoming-url="{{ url_for('schedules.api_upcoming') }}"></script>
+{% endif %}
 </body>
 </html>

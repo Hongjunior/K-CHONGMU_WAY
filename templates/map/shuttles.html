@@ -4,7 +4,11 @@
 <section class="page-section">
     <div class="page-header">
         <h2>셔틀 노선 안내</h2>
-        <a class="btn-link" href="{{ url_for('mapview.overview') }}">← 사업장 지도</a>
+        <div>
+            <a class="btn-link" href="{{ url_for('mapview.shuttle_map') }}">전체 동선 보기 →</a>
+            &nbsp;|&nbsp;
+            <a class="btn-link" href="{{ url_for('mapview.overview') }}">← 사업장 지도</a>
+        </div>
     </div>
 
     <div class="shuttle-card-list">

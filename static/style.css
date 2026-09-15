@@ -1,3 +1,14 @@
+:root {
+    --color-bg: #FBF5EE;
+    --color-surface: #ffffff;
+    --color-primary: #FB8520;
+    --color-primary-dark: #D96C0E;
+    --color-primary-light: #FDEBDC;
+    --color-text: #332E2A;
+    --color-text-muted: #7A7369;
+    --color-border: #E6DDD2;
+}
+
 * {
     box-sizing: border-box;
 }
@@ -5,8 +16,8 @@
 body {
     margin: 0;
     font-family: "Segoe UI", "Malgun Gothic", sans-serif;
-    background: #f4f6f8;
-    color: #222;
+    background: var(--color-bg);
+    color: var(--color-text);
 }
 
 a {
@@ -20,15 +31,24 @@ a {
     align-items: center;
     gap: 24px;
     padding: 12px 24px;
-    background: #1f3864;
+    background: var(--color-primary);
     color: #fff;
 }
 
 .brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     font-weight: 700;
-    font-size: 18px;
+    font-size: 15px;
     text-decoration: none;
     color: #fff;
+}
+
+.brand img {
+    height: 20px;
+    width: auto;
+    display: block;
 }
 
 .topnav {
@@ -38,7 +58,7 @@ a {
 }
 
 .topnav a {
-    color: #dbe4f5;
+    color: rgba(255,255,255,0.85);
     text-decoration: none;
     font-size: 14px;
 }
@@ -52,14 +72,14 @@ a {
     align-items: center;
     gap: 10px;
     font-size: 13px;
-    color: #dbe4f5;
+    color: rgba(255,255,255,0.85);
 }
 
 .btn-logout {
     font-size: 12px;
     padding: 5px 10px;
     border-radius: 6px;
-    border: 1px solid rgba(255,255,255,0.4);
+    border: 1px solid rgba(255,255,255,0.5);
     background: transparent;
     color: #fff;
     cursor: pointer;
@@ -81,13 +101,13 @@ a {
 }
 
 .page-hint {
-    color: #667080;
+    color: var(--color-text-muted);
     font-size: 14px;
     margin-top: -4px;
 }
 
 .field-hint {
-    color: #8a93a3;
+    color: var(--color-text-muted);
     font-size: 12px;
     margin: 4px 0 0;
 }
@@ -122,7 +142,7 @@ a {
 .auth-form-section {
     max-width: 360px;
     margin: 40px auto 0;
-    background: #fff;
+    background: var(--color-surface);
     border-radius: 10px;
     padding: 28px;
     box-shadow: 0 1px 4px rgba(0,0,0,0.08);
@@ -132,7 +152,7 @@ a {
     text-align: center;
     margin-top: 0;
     margin-bottom: 20px;
-    color: #2f6feb;
+    color: var(--color-primary);
 }
 
 .auth-form {
@@ -143,20 +163,20 @@ a {
 
 .auth-form label {
     font-size: 13px;
-    color: #556070;
+    color: var(--color-text-muted);
     margin-top: 10px;
 }
 
 .auth-form input {
     padding: 9px 10px;
-    border: 1px solid #d5dae0;
+    border: 1px solid var(--color-border);
     border-radius: 6px;
     font-size: 14px;
 }
 
 .auth-form button {
     margin-top: 18px;
-    background: #2f6feb;
+    background: var(--color-primary);
     color: #fff;
     border: none;
     padding: 10px;
@@ -165,21 +185,25 @@ a {
     font-size: 14px;
 }
 
+.auth-form button:hover {
+    background: var(--color-primary-dark);
+}
+
 .auth-switch, .auth-hint {
     text-align: center;
     font-size: 13px;
-    color: #556070;
+    color: var(--color-text-muted);
     margin-top: 16px;
     margin-bottom: 0;
 }
 
 .auth-hint {
-    color: #98a2ae;
+    color: var(--color-text-muted);
     font-size: 12px;
 }
 
 .auth-switch a {
-    color: #2f6feb;
+    color: var(--color-primary);
     text-decoration: none;
 }
 
@@ -193,7 +217,7 @@ a {
 }
 
 .worksite-card {
-    background: #fff;
+    background: var(--color-surface);
     border-radius: 10px;
     padding: 18px;
     box-shadow: 0 1px 4px rgba(0,0,0,0.08);
@@ -201,7 +225,7 @@ a {
 }
 
 .worksite-card.active {
-    border-color: #2f6feb;
+    border-color: var(--color-primary);
 }
 
 .worksite-card-name {
@@ -211,7 +235,7 @@ a {
 
 .worksite-card-desc {
     font-size: 13px;
-    color: #667080;
+    color: var(--color-text-muted);
     margin-bottom: 12px;
 }
 
@@ -220,9 +244,13 @@ a {
     padding: 8px;
     border: none;
     border-radius: 6px;
-    background: #2f6feb;
+    background: var(--color-primary);
     color: #fff;
     cursor: pointer;
+}
+
+.worksite-card button:hover {
+    background: var(--color-primary-dark);
 }
 
 /* ---------- Admin ---------- */
@@ -236,46 +264,50 @@ a {
 
 .admin-tile {
     display: block;
-    background: #fff;
+    background: var(--color-surface);
     border-radius: 10px;
     padding: 18px;
     box-shadow: 0 1px 4px rgba(0,0,0,0.08);
     text-decoration: none;
-    color: #222;
+    color: var(--color-text);
 }
 
 .admin-tile-title {
     font-weight: 600;
     margin-bottom: 6px;
-    color: #2f6feb;
+    color: var(--color-primary-dark);
 }
 
 .admin-tile-desc {
     font-size: 13px;
-    color: #667080;
+    color: var(--color-text-muted);
 }
 
 .btn-primary {
     display: inline-block;
     margin: 12px 0;
     padding: 8px 16px;
-    background: #2f6feb;
+    background: var(--color-primary);
     color: #fff;
     border-radius: 6px;
     text-decoration: none;
     font-size: 14px;
 }
 
+.btn-primary:hover {
+    background: var(--color-primary-dark);
+}
+
 .btn-link {
     font-size: 13px;
-    color: #556070;
+    color: var(--color-text-muted);
     text-decoration: none;
 }
 
 .data-table {
     width: 100%;
     border-collapse: collapse;
-    background: #fff;
+    background: var(--color-surface);
     border-radius: 10px;
     overflow: hidden;
     box-shadow: 0 1px 4px rgba(0,0,0,0.06);
@@ -285,12 +317,12 @@ a {
     padding: 10px 12px;
     text-align: left;
     font-size: 13px;
-    border-bottom: 1px solid #eef1f4;
+    border-bottom: 1px solid var(--color-border);
 }
 
 .data-table th {
-    background: #f4f6f8;
-    color: #556070;
+    background: var(--color-bg);
+    color: var(--color-text-muted);
     font-weight: 600;
 }
 
@@ -303,9 +335,9 @@ a {
     font-size: 12px;
     padding: 6px 10px;
     border-radius: 6px;
-    border: 1px solid #d5dae0;
-    background: #fff;
-    color: #556070;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-text-muted);
     text-decoration: none;
     cursor: pointer;
 }
@@ -318,8 +350,8 @@ a {
     font-size: 11px;
     padding: 2px 8px;
     border-radius: 20px;
-    background: #eef1f4;
-    color: #556070;
+    background: var(--color-bg);
+    color: var(--color-text-muted);
 }
 
 .badge-admin {
@@ -333,7 +365,7 @@ a {
 }
 
 .muted {
-    color: #98a2ae;
+    color: var(--color-text-muted);
     font-size: 12px;
 }
 
@@ -343,7 +375,7 @@ a {
 
 .filter-bar-inline select {
     padding: 6px 10px;
-    border: 1px solid #d5dae0;
+    border: 1px solid var(--color-border);
     border-radius: 6px;
 }
 
@@ -352,7 +384,7 @@ a {
     flex-direction: column;
     gap: 4px;
     max-width: 480px;
-    background: #fff;
+    background: var(--color-surface);
     border-radius: 10px;
     padding: 20px;
     box-shadow: 0 1px 4px rgba(0,0,0,0.08);
@@ -360,7 +392,7 @@ a {
 
 .entity-form label {
     font-size: 13px;
-    color: #556070;
+    color: var(--color-text-muted);
     margin-top: 10px;
 }
 
@@ -370,7 +402,7 @@ a {
 
 .entity-form input, .entity-form select, .entity-form textarea {
     padding: 8px 10px;
-    border: 1px solid #d5dae0;
+    border: 1px solid var(--color-border);
     border-radius: 6px;
     font-size: 14px;
 }
@@ -389,7 +421,7 @@ a {
 }
 
 .form-actions button {
-    background: #2f6feb;
+    background: var(--color-primary);
     color: #fff;
     border: none;
     padding: 9px 18px;
@@ -397,10 +429,14 @@ a {
     cursor: pointer;
 }
 
+.form-actions button:hover {
+    background: var(--color-primary-dark);
+}
+
 .empty-state {
     text-align: center;
     padding: 30px 0;
-    color: #98a2ae;
+    color: var(--color-text-muted);
 }
 
 /* ---------- Map ---------- */
@@ -414,7 +450,7 @@ a {
 .map-search-bar input {
     flex: 1;
     padding: 9px 12px;
-    border: 1px solid #d5dae0;
+    border: 1px solid var(--color-border);
     border-radius: 6px;
     font-size: 14px;
 }
@@ -423,9 +459,13 @@ a {
     padding: 9px 16px;
     border: none;
     border-radius: 6px;
-    background: #2f6feb;
+    background: var(--color-primary);
     color: #fff;
     cursor: pointer;
+}
+
+.map-search-bar button:hover {
+    background: var(--color-primary-dark);
 }
 
 .floor-tabs {
@@ -437,16 +477,16 @@ a {
 .floor-tab {
     padding: 6px 14px;
     border-radius: 20px;
-    background: #fff;
-    border: 1px solid #d5dae0;
-    color: #556070;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-muted);
     text-decoration: none;
     font-size: 13px;
 }
 
 .floor-tab.active {
-    background: #2f6feb;
-    border-color: #2f6feb;
+    background: var(--color-primary);
+    border-color: var(--color-primary);
     color: #fff;
 }
 
@@ -456,7 +496,7 @@ a {
     height: 480px;
     background: #eef1f4;
     border-radius: 12px;
-    border: 1px solid #d5dae0;
+    border: 1px solid var(--color-border);
     overflow: hidden;
     background-size: cover;
     background-position: center;
@@ -488,7 +528,7 @@ a {
     width: 16px;
     height: 16px;
     border-radius: 50%;
-    background: #2f6feb;
+    background: var(--color-primary);
     border: 2px solid #fff;
     box-shadow: 0 1px 3px rgba(0,0,0,0.3);
 }
@@ -496,7 +536,7 @@ a {
 .marker-building .marker-dot {
     width: 22px;
     height: 22px;
-    background: #1f3864;
+    background: var(--color-text);
 }
 
 .marker-label {
@@ -508,6 +548,8 @@ a {
     color: #222;
 }
 
+/* Facility-type legend colors — intentionally kept as distinct standalone hues
+   (not brand-tied) so the map stays readable as a data legend. */
 .marker-facility.marker-meeting_room .marker-dot { background: #2f6feb; }
 .marker-facility.marker-office .marker-dot { background: #556070; }
 .marker-facility.marker-cafeteria .marker-dot { background: #e3a83b; }
@@ -517,7 +559,7 @@ a {
 .marker-facility.marker-etc .marker-dot { background: #98a2ae; }
 
 .marker-facility.highlight .marker-dot {
-    box-shadow: 0 0 0 5px rgba(47,111,235,0.35);
+    box-shadow: 0 0 0 5px rgba(251,133,32,0.35);
 }
 
 /* ---------- Room blocks (facilities drawn to scale on the floor plan) ---------- */
@@ -548,14 +590,15 @@ a {
 }
 
 .room-block.highlight {
-    box-shadow: 0 0 0 4px rgba(47,111,235,0.35);
+    box-shadow: 0 0 0 4px rgba(251,133,32,0.35);
 }
 
 .room-block.selected {
-    border-color: #1f3864;
-    box-shadow: 0 0 0 4px rgba(31,56,100,0.35);
+    border-color: var(--color-primary-dark);
+    box-shadow: 0 0 0 4px rgba(217,108,14,0.35);
 }
 
+/* Same legend-color principle as the facility dots above. */
 .room-block.room-meeting_room   { background: rgba(47,111,235,0.16);  border-color: #2f6feb; }
 .room-block.room-lecture_room   { background: rgba(0,150,136,0.16);   border-color: #00897b; }
 .room-block.room-office         { background: rgba(85,96,112,0.16);   border-color: #556070; }
@@ -568,8 +611,8 @@ a {
 /* ---------- Facility picker (schedule form) ---------- */
 
 .facility-picker {
-    background: #fff;
-    border: 1px solid #d5dae0;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
     border-radius: 10px;
     padding: 14px;
 }
@@ -584,16 +627,16 @@ a {
 .fp-chip {
     padding: 6px 12px;
     border-radius: 20px;
-    border: 1px solid #d5dae0;
-    background: #f4f6f8;
-    color: #556070;
+    border: 1px solid var(--color-border);
+    background: var(--color-bg);
+    color: var(--color-text-muted);
     font-size: 13px;
     cursor: pointer;
 }
 
 .fp-chip.active {
-    background: #2f6feb;
-    border-color: #2f6feb;
+    background: var(--color-primary);
+    border-color: var(--color-primary);
     color: #fff;
 }
 
@@ -604,14 +647,14 @@ a {
 
 .fp-selected {
     font-size: 13px;
-    color: #1f3864;
+    color: var(--color-primary-dark);
     font-weight: 600;
     margin-bottom: 8px;
 }
 
 .facility-detail {
     margin-top: 14px;
-    background: #fff;
+    background: var(--color-surface);
     border-radius: 10px;
     padding: 16px 18px;
     box-shadow: 0 1px 4px rgba(0,0,0,0.08);
@@ -619,7 +662,7 @@ a {
 
 .facility-detail h3 {
     margin: 0 0 8px;
-    color: #2f6feb;
+    color: var(--color-primary-dark);
 }
 
 .search-result-list {
@@ -635,12 +678,12 @@ a {
     display: flex;
     align-items: center;
     gap: 10px;
-    background: #fff;
+    background: var(--color-surface);
     border-radius: 8px;
     padding: 12px 14px;
     box-shadow: 0 1px 4px rgba(0,0,0,0.06);
     text-decoration: none;
-    color: #222;
+    color: var(--color-text);
 }
 
 .search-result-name {
@@ -648,7 +691,7 @@ a {
 }
 
 .search-result-loc {
-    color: #667080;
+    color: var(--color-text-muted);
     font-size: 13px;
 }
 
@@ -664,12 +707,12 @@ a {
 
 .date-nav a {
     text-decoration: none;
-    color: #2f6feb;
+    color: var(--color-primary-dark);
 }
 
 .date-nav-form input {
     padding: 6px 10px;
-    border: 1px solid #d5dae0;
+    border: 1px solid var(--color-border);
     border-radius: 6px;
 }
 
@@ -681,7 +724,7 @@ a {
 
 .travel-gap {
     font-size: 12px;
-    color: #667080;
+    color: var(--color-text-muted);
     padding: 6px 14px;
     margin-left: 70px;
 }
@@ -692,19 +735,19 @@ a {
 }
 
 .travel-gap.unreachable {
-    color: #98a2ae;
+    color: var(--color-text-muted);
     font-style: italic;
 }
 
 .schedule-card {
     display: flex;
     gap: 14px;
-    background: #fff;
+    background: var(--color-surface);
     border-radius: 10px;
     padding: 14px;
     box-shadow: 0 1px 4px rgba(0,0,0,0.06);
     margin-bottom: 10px;
-    border-left: 4px solid #2f6feb;
+    border-left: 4px solid var(--color-primary);
 }
 
 .schedule-card.status-done {
@@ -724,12 +767,12 @@ a {
 
 .schedule-start {
     font-weight: 700;
-    color: #1f3864;
+    color: var(--color-text);
 }
 
 .schedule-end {
     font-size: 11px;
-    color: #98a2ae;
+    color: var(--color-text-muted);
 }
 
 .schedule-body {
@@ -754,13 +797,13 @@ a {
 
 .schedule-loc {
     font-size: 13px;
-    color: #667080;
+    color: var(--color-text-muted);
     margin-top: 4px;
 }
 
 .schedule-memo {
     font-size: 13px;
-    color: #8a93a3;
+    color: var(--color-text-muted);
     margin-top: 4px;
 }
 
@@ -773,7 +816,7 @@ a {
 
 .schedule-actions select {
     padding: 6px 8px;
-    border: 1px solid #d5dae0;
+    border: 1px solid var(--color-border);
     border-radius: 6px;
     font-size: 12px;
 }
@@ -798,7 +841,7 @@ a {
 }
 
 .shuttle-info-card {
-    background: #fff;
+    background: var(--color-surface);
     border-radius: 10px;
     padding: 16px;
     box-shadow: 0 1px 4px rgba(0,0,0,0.06);
@@ -807,7 +850,7 @@ a {
 
 .shuttle-info-name {
     font-weight: 700;
-    color: #1f3864;
+    color: var(--color-text);
     margin-bottom: 4px;
 }
 
@@ -818,7 +861,7 @@ a {
 
 .shuttle-info-meta {
     font-size: 12px;
-    color: #667080;
+    color: var(--color-text-muted);
     margin-bottom: 6px;
 }
 
@@ -828,7 +871,7 @@ a {
 }
 
 .shuttle-info-next.ended {
-    color: #98a2ae;
+    color: var(--color-text-muted);
 }
 
 .shuttle-route-list {
@@ -840,8 +883,8 @@ a {
 
 .shuttle-route-list li {
     padding: 6px 0;
-    border-top: 1px solid #eef1f4;
-    color: #556070;
+    border-top: 1px solid var(--color-border);
+    color: var(--color-text-muted);
 }
 
 .shuttle-route-list li:first-child {
@@ -855,7 +898,7 @@ a {
 .timetable-details summary {
     cursor: pointer;
     font-size: 12px;
-    color: #2f6feb;
+    color: var(--color-primary-dark);
     outline: none;
 }
 
@@ -870,9 +913,9 @@ a {
     font-size: 12px;
     padding: 4px 9px;
     border-radius: 20px;
-    background: #eef1f4;
-    color: #556070;
-    border: 1px solid #dde3e9;
+    background: var(--color-bg);
+    color: var(--color-text-muted);
+    border: 1px solid var(--color-border);
 }
 
 .timetable-chip.passed {
@@ -880,8 +923,94 @@ a {
 }
 
 .timetable-chip.next {
-    background: #2f6feb;
+    background: var(--color-primary);
     color: #fff;
-    border-color: #2f6feb;
+    border-color: var(--color-primary);
     font-weight: 700;
+}
+
+/* ---------- Shuttle route map ---------- */
+
+.route-overlay {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.route-overlay line {
+    pointer-events: stroke;
+    cursor: help;
+}
+
+.route-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 12px;
+    font-size: 12px;
+    color: var(--color-text-muted);
+}
+
+.route-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.route-legend-swatch {
+    width: 16px;
+    height: 3px;
+    border-radius: 2px;
+    display: inline-block;
+}
+
+/* ---------- Reminder toast ---------- */
+
+#reminder-toast-root {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 320px;
+}
+
+.reminder-toast {
+    background: var(--color-surface);
+    border-left: 5px solid var(--color-primary);
+    border-radius: 10px;
+    padding: 14px 16px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.18);
+    animation: reminder-slide-in 0.25s ease;
+}
+
+@keyframes reminder-slide-in {
+    from { transform: translateY(12px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.reminder-toast-title {
+    font-weight: 700;
+    font-size: 14px;
+    margin-bottom: 4px;
+    color: var(--color-text);
+}
+
+.reminder-toast-meta {
+    font-size: 12px;
+    color: var(--color-text-muted);
+    margin-bottom: 8px;
+}
+
+.reminder-toast-close {
+    font-size: 12px;
+    border: none;
+    background: none;
+    color: var(--color-primary-dark);
+    cursor: pointer;
+    padding: 0;
 }

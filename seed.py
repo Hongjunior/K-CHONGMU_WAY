@@ -97,45 +97,68 @@ def seed_demo_data(engine):
             ).scalar()
             facility_ids[name] = fac_id
 
+        # Deliberately varied numbers per route (not a single repeated template) so the
+        # demo timetable/route-map actually looks like a real, mixed shuttle network:
+        # a fast frequent hop, a longer less-frequent one, a lunchtime-only shuttle, etc.
         route_plan = [
-            ("A동-B동 순환 셔틀", "A동 정문 셔틀장", "B동 후문 셔틀장"),
-            ("B동-C동 순환 셔틀", "B동 후문 셔틀장", "C동 정문 셔틀장"),
-            ("C동-식당동 순환 셔틀", "C동 정문 셔틀장", "식당동 셔틀 승하차장"),
-            ("식당동-A동 순환 셔틀", "식당동 셔틀 승하차장", "A동 정문 셔틀장"),
+            {
+                "name": "A동-B동 순환 셔틀", "dep": "A동 정문 셔틀장", "arr": "B동 후문 셔틀장",
+                "travel": 5, "wait": 2, "start": "07:30", "end": "20:00", "interval": 10,
+            },
+            {
+                "name": "B동-C동 순환 셔틀", "dep": "B동 후문 셔틀장", "arr": "C동 정문 셔틀장",
+                "travel": 12, "wait": 4, "start": "08:00", "end": "19:00", "interval": 20,
+            },
+            {
+                "name": "C동-식당동 순환 셔틀", "dep": "C동 정문 셔틀장", "arr": "식당동 셔틀 승하차장",
+                "travel": 7, "wait": 3, "start": "11:00", "end": "14:30", "interval": 15,
+            },
+            {
+                "name": "식당동-A동 순환 셔틀", "dep": "식당동 셔틀 승하차장", "arr": "A동 정문 셔틀장",
+                "travel": 9, "wait": 5, "start": "08:00", "end": "18:30", "interval": 30,
+            },
         ]
         route_ids = {}
-        for route_name, dep, arr in route_plan:
+        for r in route_plan:
             rid = conn.execute(
                 text(
                     "INSERT INTO shuttle_routes "
                     "(worksite_id, route_name, departure_facility_id, arrival_facility_id, "
                     " travel_minutes, waiting_minutes, operation_start, operation_end, interval_minutes) "
-                    "VALUES (:w, :rn, :dep, :arr, 8, 3, '08:00', '19:00', 15) RETURNING id"
+                    "VALUES (:w, :rn, :dep, :arr, :tm, :wm, :os, :oe, :iv) RETURNING id"
                 ),
                 {
                     "w": worksite_id,
-                    "rn": route_name,
-                    "dep": facility_ids[dep],
-                    "arr": facility_ids[arr],
+                    "rn": r["name"],
+                    "dep": facility_ids[r["dep"]],
+                    "arr": facility_ids[r["arr"]],
+                    "tm": r["travel"],
+                    "wm": r["wait"],
+                    "os": r["start"],
+                    "oe": r["end"],
+                    "iv": r["interval"],
                 },
             ).scalar()
-            route_ids[route_name] = rid
+            route_ids[r["name"]] = rid
 
-        # Shuttle edges are one-way (the loop only runs in one direction).
-        for route_name, dep, arr in route_plan:
+        # Shuttle edges are one-way (the loop only runs in one direction). Edge minutes
+        # mirror each route's own travel+wait so Phase 2's travel-time calculation uses
+        # the same numbers shown on the timetable page.
+        for r in route_plan:
             conn.execute(
                 text(
                     "INSERT INTO move_edges "
                     "(worksite_id, from_node_type, from_node_id, to_node_type, to_node_id, "
                     " mode, minutes, bidirectional, shuttle_route_id) "
-                    "VALUES (:w, 'facility', :f, 'facility', :t, 'shuttle', 11, :bd, :rid)"
+                    "VALUES (:w, 'facility', :f, 'facility', :t, 'shuttle', :min, :bd, :rid)"
                 ),
                 {
                     "w": worksite_id,
-                    "f": facility_ids[dep],
-                    "t": facility_ids[arr],
+                    "f": facility_ids[r["dep"]],
+                    "t": facility_ids[r["arr"]],
+                    "min": r["travel"] + r["wait"],
                     "bd": False,
-                    "rid": route_ids[route_name],
+                    "rid": route_ids[r["name"]],
                 },
             )
 

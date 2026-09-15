@@ -159,6 +159,57 @@ def shuttles():
     )
 
 
+@mapview_bp.route("/shuttle-map")
+@login_required
+@worksite_required
+def shuttle_map():
+    with engine.connect() as conn:
+        buildings = conn.execute(
+            text("SELECT * FROM buildings WHERE worksite_id = :w ORDER BY name"),
+            {"w": _worksite_id()},
+        ).mappings().all()
+
+        rows = conn.execute(
+            text(
+                "SELECT sr.route_name, sr.travel_minutes, sr.waiting_minutes, sr.interval_minutes, "
+                "sr.operation_start, sr.operation_end, "
+                "bd.id AS dep_building_id, bd.name AS dep_building_name, "
+                "bd.pos_x AS dep_x, bd.pos_y AS dep_y, "
+                "ba.id AS arr_building_id, ba.name AS arr_building_name, "
+                "ba.pos_x AS arr_x, ba.pos_y AS arr_y "
+                "FROM shuttle_routes sr "
+                "JOIN facilities fd ON fd.id = sr.departure_facility_id "
+                "JOIN floors fld ON fld.id = fd.floor_id JOIN buildings bd ON bd.id = fld.building_id "
+                "JOIN facilities fa ON fa.id = sr.arrival_facility_id "
+                "JOIN floors fla ON fla.id = fa.floor_id JOIN buildings ba ON ba.id = fla.building_id "
+                "WHERE sr.worksite_id = :w AND sr.active ORDER BY sr.route_name"
+            ),
+            {"w": _worksite_id()},
+        ).mappings().all()
+
+    palette = ["#FB8520", "#2f6feb", "#2e7d32", "#8e44ad", "#c0392b", "#00897b"]
+    segments = []
+    for i, r in enumerate(rows):
+        segments.append(
+            {
+                "route_name": r["route_name"],
+                "travel_minutes": r["travel_minutes"],
+                "waiting_minutes": r["waiting_minutes"],
+                "interval_minutes": r["interval_minutes"],
+                "operation": f"{r['operation_start']}~{r['operation_end']}",
+                "color": palette[i % len(palette)],
+                "from_name": r["dep_building_name"],
+                "from_x": r["dep_x"],
+                "from_y": r["dep_y"],
+                "to_name": r["arr_building_name"],
+                "to_x": r["arr_x"],
+                "to_y": r["arr_y"],
+            }
+        )
+
+    return render_template("map/shuttle_map.html", buildings=buildings, segments=segments)
+
+
 @mapview_bp.route("/search")
 @login_required
 @worksite_required

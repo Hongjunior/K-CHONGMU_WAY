@@ -1,7 +1,7 @@
 from datetime import date as date_cls
 from datetime import datetime, timedelta
 
-from flask import Blueprint, flash, redirect, render_template, request, session, url_for
+from flask import Blueprint, flash, jsonify, redirect, render_template, request, session, url_for
 from sqlalchemy import bindparam, text
 
 from blueprints.auth import login_required, worksite_required
@@ -324,3 +324,44 @@ def update_status(schedule_id):
             {"s": new_status, "id": schedule_id, "u": _user_id()},
         )
     return redirect(url_for("schedules.day_view", date=date_str))
+
+
+@schedules_bp.route("/api/upcoming")
+@login_required
+@worksite_required
+def api_upcoming():
+    """Today's not-done schedules for the reminder popup (static/reminder.js)."""
+    today = date_cls.today().isoformat()
+
+    with engine.connect() as conn:
+        rows = conn.execute(
+            text(
+                "SELECT s.id, s.title, s.start_time, s.duration_minutes, "
+                "fac.name AS facility_name, fl.floor_label, b.name AS building_name "
+                "FROM schedules s "
+                "LEFT JOIN facilities fac ON fac.id = s.facility_id "
+                "LEFT JOIN floors fl ON fl.id = fac.floor_id "
+                "LEFT JOIN buildings b ON b.id = fl.building_id "
+                "WHERE s.user_id = :u AND s.worksite_id = :w AND s.date = :d "
+                "AND s.status != 'done' AND s.status != 'on_hold' "
+                "ORDER BY s.start_time"
+            ),
+            {"u": _user_id(), "w": _worksite_id(), "d": today},
+        ).mappings().all()
+
+    items = []
+    for r in rows:
+        location = None
+        if r["facility_name"]:
+            location = f"{r['building_name']} {r['floor_label']} {r['facility_name']}"
+        items.append(
+            {
+                "id": r["id"],
+                "title": r["title"],
+                "start_time": r["start_time"],
+                "duration_minutes": r["duration_minutes"],
+                "location": location,
+            }
+        )
+
+    return jsonify(items)

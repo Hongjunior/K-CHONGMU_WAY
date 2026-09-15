@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="page-section">
+    <div class="page-header">
+        <h2>셔틀 전체 동선</h2>
+        <div>
+            <a class="btn-link" href="{{ url_for('mapview.shuttles') }}">시간표 보기 →</a>
+            &nbsp;|&nbsp;
+            <a class="btn-link" href="{{ url_for('mapview.overview') }}">← 사업장 지도</a>
+        </div>
+    </div>
+    <p class="page-hint">버스 앱에서 노선을 보는 것처럼, 셔틀이 어느 건물에서 어느 건물로 이어지는지 지도 위 화살표로 보여줍니다. 선 위에 마우스를 올리면 노선 정보가 나옵니다.</p>
+
+    <div class="map-canvas map-canvas-site" style="position: relative;">
+        <svg class="route-overlay" viewBox="0 0 100 100" preserveAspectRatio="none">
+            <defs>
+                {% for seg in segments %}
+                <marker id="arrow-{{ loop.index0 }}" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto" markerUnits="strokeWidth">
+                    <path d="M0,0 L6,3 L0,6 Z" fill="{{ seg.color }}"></path>
+                </marker>
+                {% endfor %}
+            </defs>
+            {% for seg in segments %}
+            <line
+                x1="{{ seg.from_x }}" y1="{{ seg.from_y }}"
+                x2="{{ seg.to_x }}" y2="{{ seg.to_y }}"
+                stroke="{{ seg.color }}" stroke-width="0.6"
+                marker-end="url(#arrow-{{ loop.index0 }})"
+            ><title>{{ seg.route_name }}: {{ seg.from_name }} → {{ seg.to_name }} · 이동 {{ seg.travel_minutes }}분 · 배차간격 {{ seg.interval_minutes }}분 · 운행 {{ seg.operation }}</title></line>
+            {% endfor %}
+        </svg>
+
+        {% for b in buildings %}
+        <div class="map-marker marker-building" style="left: {{ b['pos_x'] }}%; top: {{ b['pos_y'] }}%;">
+            <span class="marker-dot"></span>
+            <span class="marker-label">{{ b['name'] }}</span>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="route-legend">
+        {% for seg in segments %}
+        <span class="route-legend-item">
+            <span class="route-legend-swatch" style="background: {{ seg.color }};"></span>
+            {{ seg.route_name }} ({{ seg.from_name }}→{{ seg.to_name }}, {{ seg.travel_minutes }}분·{{ seg.interval_minutes }}분 간격)
+        </span>
+        {% else %}
+        <p class="empty-state">등록된 셔틀 노선이 없습니다.</p>
+        {% endfor %}
+    </div>
+</section>
+
+{% endblock %}
