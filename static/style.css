@@ -715,6 +715,10 @@ a {
     color: #fff;
 }
 
+.marker-icon.selected .marker-dot {
+    box-shadow: 0 0 0 4px rgba(217,108,14,0.35);
+}
+
 /* ---------- Room blocks (facilities drawn to scale on the floor plan) ---------- */
 
 .room-block {

@@ -1,3 +1,10 @@
+var FP_ICON_SVG = {
+    shuttle_stop:
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="2"></rect><circle cx="7.5" cy="18" r="1.5"></circle><circle cx="16.5" cy="18" r="1.5"></circle><line x1="3" y1="11" x2="21" y2="11"></line></svg>',
+    entrance_auth:
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"></rect><line x1="3" y1="10" x2="21" y2="10"></line><line x1="7" y1="15" x2="11" y2="15"></line></svg>',
+};
+
 document.addEventListener("DOMContentLoaded", function () {
     var dataEl = document.getElementById("worksite-map-data");
     var input = document.getElementById("facility_id_input");
@@ -108,12 +115,26 @@ document.addEventListener("DOMContentLoaded", function () {
             var block = document.createElement("button");
             block.type = "button";
             var isSelected = String(fac.id) === String(input.value);
-            block.className = "room-block fp-room room-" + fac.facility_type + (isSelected ? " selected" : "");
-            block.style.left = fac.pos_x + "%";
-            block.style.top = fac.pos_y + "%";
-            block.style.width = fac.shape_w + "%";
-            block.style.height = fac.shape_h + "%";
-            block.textContent = fac.name;
+
+            if (fac.facility_type === "shuttle_stop" || fac.facility_type === "entrance_auth") {
+                block.className =
+                    "map-marker marker-facility marker-icon fp-room marker-" +
+                    fac.facility_type +
+                    (isSelected ? " selected" : "");
+                block.style.left = fac.pos_x + "%";
+                block.style.top = fac.pos_y + "%";
+                block.innerHTML =
+                    '<span class="marker-dot">' + FP_ICON_SVG[fac.facility_type] + "</span>" +
+                    '<span class="marker-label">' + fac.name + "</span>";
+            } else {
+                block.className = "room-block fp-room room-" + fac.facility_type + (isSelected ? " selected" : "");
+                block.style.left = fac.pos_x + "%";
+                block.style.top = fac.pos_y + "%";
+                block.style.width = fac.shape_w + "%";
+                block.style.height = fac.shape_h + "%";
+                block.textContent = fac.name;
+            }
+
             block.addEventListener("click", function () {
                 input.value = fac.id;
                 selectedEl.textContent = "선택됨: " + fac.name;
