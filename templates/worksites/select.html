@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="page-section">
+    <h2>사업장 선택</h2>
+    <p class="page-hint">근무하거나 방문할 사업장을 선택해주세요.</p>
+
+    <div class="worksite-grid">
+        {% for w in worksites %}
+        <form action="{{ url_for('worksites.select_worksite') }}" method="post" class="worksite-card {{ 'active' if w['id'] == current_id else '' }}">
+            <input type="hidden" name="worksite_id" value="{{ w['id'] }}">
+            <div class="worksite-card-name">{{ w['name'] }}</div>
+            {% if w['description'] %}
+            <div class="worksite-card-desc">{{ w['description'] }}</div>
+            {% endif %}
+            <button type="submit">
+                {{ '현재 선택됨' if w['id'] == current_id else '선택' }}
+            </button>
+        </form>
+        {% else %}
+        <p class="empty-state">등록된 사업장이 없습니다. 관리자에게 문의해주세요.</p>
+        {% endfor %}
+    </div>
+</section>
+
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="page-section">
+    <div class="page-header">
+        <h2>{{ floor['building_name'] }} - {{ floor['floor_label'] }}</h2>
+        <a class="btn-link" href="{{ url_for('mapview.overview') }}">← 사업장 지도</a>
+    </div>
+
+    <div class="floor-tabs">
+        {% for f in sibling_floors %}
+        <a class="floor-tab {{ 'active' if f['id'] == floor['id'] else '' }}" href="{{ url_for('mapview.floor_view', floor_id=f['id']) }}">{{ f['floor_label'] }}</a>
+        {% endfor %}
+    </div>
+
+    <form action="{{ url_for('mapview.search') }}" method="get" class="map-search-bar">
+        <input type="text" name="q" placeholder="이 사업장에서 시설 검색" required>
+        <button type="submit">검색</button>
+    </form>
+
+    <div class="map-canvas map-canvas-floor" id="floor-canvas">
+        {% for fac in facilities %}
+        <button
+            type="button"
+            class="room-block marker-facility room-{{ fac['facility_type'] }} {{ 'highlight' if fac['id'] == highlight_id else '' }}"
+            style="left: {{ fac['pos_x'] }}%; top: {{ fac['pos_y'] }}%; width: {{ fac['shape_w'] }}%; height: {{ fac['shape_h'] }}%;"
+            data-id="{{ fac['id'] }}"
+            data-name="{{ fac['name'] }}"
+            data-type="{{ type_labels.get(fac['facility_type'], fac['facility_type']) }}"
+            data-desc="{{ fac['description'] or '' }}"
+            data-hours="{% if fac['operating_hours_open'] %}{{ fac['operating_hours_open'] }} ~ {{ fac['operating_hours_close'] }}{% else %}상시{% endif %}"
+            data-routes='{{ shuttle_routes_by_facility.get(fac["id"], [])|tojson }}'
+        >{{ fac['name'] }}</button>
+        {% else %}
+        <p class="empty-state">이 층에 등록된 시설이 없습니다.</p>
+        {% endfor %}
+    </div>
+
+    <div id="facility-detail" class="facility-detail" hidden>
+        <h3 id="fd-name"></h3>
+        <p><strong>유형:</strong> <span id="fd-type"></span></p>
+        <p><strong>운영시간:</strong> <span id="fd-hours"></span></p>
+        <p id="fd-desc"></p>
+        <div id="fd-routes" hidden></div>
+    </div>
+
+    <p class="page-hint"><a href="{{ url_for('mapview.shuttles') }}">→ 전체 셔틀 노선/시간표 보기</a></p>
+</section>
+
+<script src="{{ url_for('static', filename='map.js') }}" data-highlight="{{ highlight_id or '' }}"></script>
+
+{% endblock %}

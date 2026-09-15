@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="page-section">
+    <div class="page-header">
+        <h2>셔틀 노선 안내</h2>
+        <a class="btn-link" href="{{ url_for('mapview.overview') }}">← 사업장 지도</a>
+    </div>
+
+    <div class="shuttle-card-list">
+        {% for r in routes %}
+        <div class="shuttle-info-card">
+            <div class="shuttle-info-name">{{ r.route_name }}</div>
+            <div class="shuttle-info-route">{{ r.departure_label }} → {{ r.arrival_label }}</div>
+            <div class="shuttle-info-meta">
+                운행 {{ r.operation_start }}~{{ r.operation_end }} · 배차간격 {{ r.interval_minutes }}분
+                · 이동 {{ r.travel_minutes }}분 (평균 대기 {{ r.waiting_minutes }}분)
+            </div>
+            <div class="shuttle-info-next {{ 'ended' if not r.next_departure else '' }}">
+                {% if r.next_departure %}
+                다음 셔틀: <strong>{{ r.next_departure }}</strong>
+                {% else %}
+                금일 운행 종료
+                {% endif %}
+            </div>
+
+            <details class="timetable-details">
+                <summary>정식 시간표 보기 (일 {{ r.timetable|length }}회 운행)</summary>
+                <div class="timetable-grid">
+                    {% for t in r.timetable %}
+                    <span class="timetable-chip {{ 'passed' if t < now_str else '' }} {{ 'next' if t == r.next_departure else '' }}">{{ t }}</span>
+                    {% endfor %}
+                </div>
+            </details>
+        </div>
+        {% else %}
+        <p class="empty-state">등록된 셔틀 노선이 없습니다.</p>
+        {% endfor %}
+    </div>
+</section>
+
+{% endblock %}

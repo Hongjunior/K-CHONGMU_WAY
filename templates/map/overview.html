@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="page-section">
+    <div class="page-header">
+        <h2>{{ worksite['name'] }} - 사업장 지도</h2>
+    </div>
+
+    <form action="{{ url_for('mapview.search') }}" method="get" class="map-search-bar">
+        <input type="text" name="q" placeholder="건물·층·시설 검색 (예: 회의실)" required>
+        <button type="submit">검색</button>
+    </form>
+
+    <div class="map-canvas map-canvas-site">
+        {% for b in buildings %}
+        {% set target = building_first_floor.get(b['id']) %}
+        <a
+            class="map-marker marker-building"
+            style="left: {{ b['pos_x'] }}%; top: {{ b['pos_y'] }}%;"
+            href="{{ url_for('mapview.floor_view', floor_id=target) if target else '#' }}"
+            title="{{ b['name'] }}{% if not target %} (등록된 층 없음){% endif %}"
+        >
+            <span class="marker-dot"></span>
+            <span class="marker-label">{{ b['name'] }}</span>
+        </a>
+        {% else %}
+        <p class="empty-state">등록된 건물이 없습니다.</p>
+        {% endfor %}
+    </div>
+</section>
+
+{% endblock %}

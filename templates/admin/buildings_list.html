@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="page-section">
+    <div class="page-header">
+        <h2>건물 관리</h2>
+        <a class="btn-link" href="{{ url_for('admin.dashboard') }}">← 대시보드</a>
+    </div>
+
+    <a class="btn-primary" href="{{ url_for('admin.buildings_new') }}">+ 건물 등록</a>
+
+    <table class="data-table">
+        <thead>
+            <tr><th>ID</th><th>건물명</th><th>지도 위치(x,y %)</th><th></th></tr>
+        </thead>
+        <tbody>
+        {% for b in buildings %}
+            <tr>
+                <td>{{ b['id'] }}</td>
+                <td>{{ b['name'] }}</td>
+                <td>{{ b['pos_x'] }}, {{ b['pos_y'] }}</td>
+                <td class="row-actions">
+                    <a class="btn-edit" href="{{ url_for('admin.buildings_edit', building_id=b['id']) }}">수정</a>
+                    <form action="{{ url_for('admin.buildings_delete', building_id=b['id']) }}" method="post" onsubmit="return confirm('삭제하시겠습니까? 하위 데이터가 있으면 삭제되지 않습니다.');">
+                        <button type="submit" class="btn-delete">삭제</button>
+                    </form>
+                </td>
+            </tr>
+        {% else %}
+            <tr><td colspan="4" class="empty-state">등록된 건물이 없습니다.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</section>
+
+{% endblock %}

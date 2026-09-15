@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="page-section">
+    <div class="page-header">
+        <h2>셔틀 노선 관리</h2>
+        <a class="btn-link" href="{{ url_for('admin.dashboard') }}">← 대시보드</a>
+    </div>
+
+    <a class="btn-primary" href="{{ url_for('admin.shuttle_routes_new') }}">+ 셔틀 노선 등록</a>
+
+    <table class="data-table">
+        <thead>
+            <tr><th>ID</th><th>노선명</th><th>출발</th><th>도착</th><th>이동/대기(분)</th><th>운행시간</th><th>배차간격</th><th>사용</th><th></th></tr>
+        </thead>
+        <tbody>
+        {% for r in routes %}
+            <tr>
+                <td>{{ r['id'] }}</td>
+                <td>{{ r['route_name'] }}</td>
+                <td>{{ r['departure_name'] }}</td>
+                <td>{{ r['arrival_name'] }}</td>
+                <td>{{ r['travel_minutes'] }} / {{ r['waiting_minutes'] }}</td>
+                <td>{{ r['operation_start'] }}~{{ r['operation_end'] }}</td>
+                <td>{{ r['interval_minutes'] }}분</td>
+                <td>{{ '사용' if r['active'] else '미사용' }}</td>
+                <td class="row-actions">
+                    <a class="btn-edit" href="{{ url_for('admin.shuttle_routes_edit', route_id=r['id']) }}">수정</a>
+                    <form action="{{ url_for('admin.shuttle_routes_delete', route_id=r['id']) }}" method="post" onsubmit="return confirm('삭제하시겠습니까?');">
+                        <button type="submit" class="btn-delete">삭제</button>
+                    </form>
+                </td>
+            </tr>
+        {% else %}
+            <tr><td colspan="9" class="empty-state">등록된 셔틀 노선이 없습니다.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</section>
+
+{% endblock %}

@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="page-section">
+    <div class="page-header">
+        <h2>내 일정</h2>
+        <a class="btn-primary" href="{{ url_for('schedules.new_schedule', date=date_str) }}">+ 일정 등록</a>
+    </div>
+
+    <div class="date-nav">
+        <a href="{{ url_for('schedules.day_view', date=prev_date) }}">← 전날</a>
+        <form method="get" class="date-nav-form">
+            <input type="date" name="date" value="{{ date_str }}" onchange="this.form.submit()">
+        </form>
+        <a href="{{ url_for('schedules.day_view', date=next_date) }}">다음날 →</a>
+        {% if date_str != today %}
+        <a class="btn-link" href="{{ url_for('schedules.day_view', date=today) }}">오늘로</a>
+        {% endif %}
+    </div>
+
+    <div class="schedule-list">
+        {% for item in items %}
+        {% set s = item.schedule %}
+
+        {% if item.gap_minutes is not none %}
+        <div class="travel-gap {{ 'warning' if item.warning else '' }} {{ 'unreachable' if item.unreachable else '' }}">
+            {% if item.unreachable %}
+                이전 일정 장소에서 이동 경로 정보가 없습니다.
+            {% else %}
+                이동시간 약 {{ item.travel_minutes }}분 필요 · 일정 사이 여유 {{ item.gap_minutes }}분
+                {% if item.warning %}
+                    <strong>— 이동시간이 부족할 수 있습니다!</strong>
+                {% endif %}
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <div class="schedule-card status-{{ s.status }}">
+            <div class="schedule-time">
+                <div class="schedule-start">{{ s.start_time }}</div>
+                {% if item.end_time %}<div class="schedule-end">~{{ item.end_time }}</div>{% endif %}
+            </div>
+            <div class="schedule-body">
+                <div class="schedule-title-row">
+                    <span class="schedule-title">{{ s.title }}</span>
+                    <span class="badge">{{ priority_labels.get(s.priority, s.priority) }}</span>
+                    <span class="badge badge-status-{{ s.status }}">{{ status_labels.get(s.status, s.status) }}</span>
+                </div>
+                {% if item.facility_label %}
+                <div class="schedule-loc">{{ item.facility_label }}</div>
+                {% endif %}
+                {% if s.memo %}
+                <div class="schedule-memo">{{ s.memo }}</div>
+                {% endif %}
+            </div>
+            <div class="schedule-actions">
+                <form action="{{ url_for('schedules.update_status', schedule_id=s.id) }}" method="post">
+                    <input type="hidden" name="date" value="{{ date_str }}">
+                    <select name="status" onchange="this.form.submit()">
+                        {% for value, label in statuses %}
+                        <option value="{{ value }}" {{ 'selected' if s.status == value else '' }}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </form>
+                <a class="btn-edit" href="{{ url_for('schedules.edit_schedule', schedule_id=s.id) }}">수정</a>
+                <form action="{{ url_for('schedules.delete_schedule', schedule_id=s.id) }}" method="post" onsubmit="return confirm('삭제하시겠습니까?');">
+                    <input type="hidden" name="date" value="{{ date_str }}">
+                    <button type="submit" class="btn-delete">삭제</button>
+                </form>
+            </div>
+        </div>
+        {% else %}
+        <p class="empty-state">이 날짜에 등록된 일정이 없습니다.</p>
+        {% endfor %}
+    </div>
+</section>
+
+{% endblock %}

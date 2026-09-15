@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="page-section">
+    <div class="page-header">
+        <h2>이동경로 관리</h2>
+        <a class="btn-link" href="{{ url_for('admin.dashboard') }}">← 대시보드</a>
+    </div>
+    <p class="page-hint">건물·층·시설 사이의 이동시간 그래프입니다. Phase 2/3의 동선 계산이 이 데이터를 사용합니다.</p>
+
+    <a class="btn-primary" href="{{ url_for('admin.move_edges_new') }}">+ 이동경로 등록</a>
+
+    <table class="data-table">
+        <thead>
+            <tr><th>ID</th><th>출발</th><th>도착</th><th>수단</th><th>소요시간(분)</th><th>양방향</th><th>사용</th><th></th></tr>
+        </thead>
+        <tbody>
+        {% for e in edges %}
+            <tr>
+                <td>{{ e['id'] }}</td>
+                <td>{{ e['from_label'] }}</td>
+                <td>{{ e['to_label'] }}</td>
+                <td>{{ mode_labels.get(e['mode'], e['mode']) }}</td>
+                <td>{{ e['minutes'] }}</td>
+                <td>{{ '예' if e['bidirectional'] else '아니오' }}</td>
+                <td>{{ '사용' if e['active'] else '미사용' }}</td>
+                <td class="row-actions">
+                    <a class="btn-edit" href="{{ url_for('admin.move_edges_edit', edge_id=e['id']) }}">수정</a>
+                    <form action="{{ url_for('admin.move_edges_delete', edge_id=e['id']) }}" method="post" onsubmit="return confirm('삭제하시겠습니까?');">
+                        <button type="submit" class="btn-delete">삭제</button>
+                    </form>
+                </td>
+            </tr>
+        {% else %}
+            <tr><td colspan="8" class="empty-state">등록된 이동경로가 없습니다.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</section>
+
+{% endblock %}

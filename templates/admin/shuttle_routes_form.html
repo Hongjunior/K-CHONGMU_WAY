@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="page-section">
+    <h2>{{ '셔틀 노선 수정' if route else '셔틀 노선 등록' }}</h2>
+    <form action="{{ url_for('admin.shuttle_routes_edit', route_id=route['id']) if route else url_for('admin.shuttle_routes_new') }}" method="post" class="entity-form">
+        <label>노선명</label>
+        <input type="text" name="route_name" value="{{ route['route_name'] if route else '' }}" required>
+
+        <label>출발 시설</label>
+        <select name="departure_facility_id" required>
+            <option value="">선택</option>
+            {% for f in facilities %}
+            <option value="{{ f['id'] }}" {{ 'selected' if route and route['departure_facility_id'] == f['id'] else '' }}>{{ f['building_name'] }} {{ f['floor_label'] }} {{ f['name'] }}</option>
+            {% endfor %}
+        </select>
+
+        <label>도착 시설</label>
+        <select name="arrival_facility_id" required>
+            <option value="">선택</option>
+            {% for f in facilities %}
+            <option value="{{ f['id'] }}" {{ 'selected' if route and route['arrival_facility_id'] == f['id'] else '' }}>{{ f['building_name'] }} {{ f['floor_label'] }} {{ f['name'] }}</option>
+            {% endfor %}
+        </select>
+
+        <label>이동 소요시간(분)</label>
+        <input type="number" name="travel_minutes" min="0" value="{{ route['travel_minutes'] if route else 8 }}" required>
+
+        <label>평균 대기시간(분)</label>
+        <input type="number" name="waiting_minutes" min="0" value="{{ route['waiting_minutes'] if route else 3 }}">
+
+        <label>운행 시작시간</label>
+        <input type="text" name="operation_start" placeholder="08:00" value="{{ route['operation_start'] if route else '08:00' }}" required>
+
+        <label>운행 종료시간</label>
+        <input type="text" name="operation_end" placeholder="19:00" value="{{ route['operation_end'] if route else '19:00' }}" required>
+
+        <label>배차 간격(분)</label>
+        <input type="number" name="interval_minutes" min="1" value="{{ route['interval_minutes'] if route else 15 }}" required>
+
+        {% if route %}
+        <label class="checkbox-label">
+            <input type="checkbox" name="active" {{ 'checked' if route['active'] else '' }}>
+            사용 중
+        </label>
+        {% endif %}
+
+        <div class="form-actions">
+            <button type="submit">저장</button>
+            <a href="{{ url_for('admin.shuttle_routes_list') }}" class="btn-cancel">취소</a>
+        </div>
+    </form>
+</section>
+
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="page-section">
+    <div class="page-header">
+        <h2>시설 관리</h2>
+        <a class="btn-link" href="{{ url_for('admin.dashboard') }}">← 대시보드</a>
+    </div>
+
+    <form method="get" class="filter-bar-inline">
+        <select name="floor_id" onchange="this.form.submit()">
+            <option value="">전체 층</option>
+            {% for f in floors %}
+            <option value="{{ f['id'] }}" {{ 'selected' if f['id'] == selected_floor_id else '' }}>{{ f['building_name'] }} {{ f['floor_label'] }}</option>
+            {% endfor %}
+        </select>
+    </form>
+
+    <a class="btn-primary" href="{{ url_for('admin.facilities_new') }}">+ 시설 등록</a>
+
+    <table class="data-table">
+        <thead>
+            <tr><th>ID</th><th>건물/층</th><th>시설명</th><th>유형</th><th>운영시간</th><th>사용</th><th></th></tr>
+        </thead>
+        <tbody>
+        {% for f in facilities %}
+            <tr>
+                <td>{{ f['id'] }}</td>
+                <td>{{ f['building_name'] }} {{ f['floor_label'] }}</td>
+                <td>{{ f['name'] }}</td>
+                <td>{{ type_labels.get(f['facility_type'], f['facility_type']) }}</td>
+                <td>
+                    {% if f['operating_hours_open'] %}{{ f['operating_hours_open'] }}~{{ f['operating_hours_close'] }}{% else %}-{% endif %}
+                </td>
+                <td>{{ '사용' if f['active'] else '미사용' }}</td>
+                <td class="row-actions">
+                    <a class="btn-edit" href="{{ url_for('admin.facilities_edit', facility_id=f['id']) }}">수정</a>
+                    <form action="{{ url_for('admin.facilities_delete', facility_id=f['id']) }}" method="post" onsubmit="return confirm('삭제하시겠습니까? 하위 데이터가 있으면 삭제되지 않습니다.');">
+                        <button type="submit" class="btn-delete">삭제</button>
+                    </form>
+                </td>
+            </tr>
+        {% else %}
+            <tr><td colspan="7" class="empty-state">등록된 시설이 없습니다.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</section>
+
+{% endblock %}

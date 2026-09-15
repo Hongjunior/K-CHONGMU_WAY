@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="page-section">
+    <div class="page-header">
+        <h2>시설 검색</h2>
+        <a class="btn-link" href="{{ url_for('mapview.overview') }}">← 사업장 지도</a>
+    </div>
+
+    <form action="{{ url_for('mapview.search') }}" method="get" class="map-search-bar">
+        <input type="text" name="q" value="{{ q }}" placeholder="건물·층·시설 검색" required autofocus>
+        <button type="submit">검색</button>
+    </form>
+
+    <ul class="search-result-list">
+        {% for r in results %}
+        <li class="search-result-item">
+            <a href="{{ url_for('mapview.floor_view', floor_id=r['floor_id'], facility=r['id']) }}">
+                <span class="search-result-name">{{ r['name'] }}</span>
+                <span class="search-result-loc">{{ r['building_name'] }} {{ r['floor_label'] }}</span>
+                <span class="badge">{{ type_labels.get(r['facility_type'], r['facility_type']) }}</span>
+            </a>
+        </li>
+        {% else %}
+        <li class="empty-state">
+            {% if q %}'{{ q }}'에 대한 검색 결과가 없습니다.{% else %}검색어를 입력해주세요.{% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+</section>
+
+{% endblock %}

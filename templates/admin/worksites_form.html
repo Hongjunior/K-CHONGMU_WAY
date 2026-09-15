@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="page-section">
+    <h2>{{ '사업장 수정' if worksite else '사업장 등록' }}</h2>
+    <form action="{{ url_for('admin.worksites_edit', worksite_id=worksite['id']) if worksite else url_for('admin.worksites_new') }}" method="post" class="entity-form">
+        <label>사업장명</label>
+        <input type="text" name="name" value="{{ worksite['name'] if worksite else '' }}" required>
+
+        <label>설명</label>
+        <textarea name="description" rows="3">{{ worksite['description'] if worksite else '' }}</textarea>
+
+        {% if worksite %}
+        <label class="checkbox-label">
+            <input type="checkbox" name="active" {{ 'checked' if worksite['active'] else '' }}>
+            사용 중
+        </label>
+        {% endif %}
+
+        <div class="form-actions">
+            <button type="submit">저장</button>
+            <a href="{{ url_for('admin.worksites_list') }}" class="btn-cancel">취소</a>
+        </div>
+    </form>
+</section>
+
+{% endblock %}

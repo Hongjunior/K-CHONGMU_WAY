@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="page-section">
+    <h2>관리자 대시보드</h2>
+    <p class="page-hint">
+        현재 선택된 사업장:
+        {% if worksite_name %}<strong>{{ worksite_name }}</strong>{% else %}<em>선택 안 됨</em>{% endif %}
+    </p>
+
+    <div class="admin-grid">
+        <a class="admin-tile" href="{{ url_for('admin.users_list') }}">
+            <div class="admin-tile-title">사용자 관리</div>
+            <div class="admin-tile-desc">계정 목록 및 관리자 권한 부여/회수</div>
+        </a>
+        <a class="admin-tile" href="{{ url_for('admin.worksites_list') }}">
+            <div class="admin-tile-title">사업장 관리</div>
+            <div class="admin-tile-desc">사업장 등록·수정·삭제</div>
+        </a>
+        <a class="admin-tile" href="{{ url_for('admin.buildings_list') }}">
+            <div class="admin-tile-title">건물 관리</div>
+            <div class="admin-tile-desc">현재 사업장의 건물 및 지도 위치</div>
+        </a>
+        <a class="admin-tile" href="{{ url_for('admin.floors_list') }}">
+            <div class="admin-tile-title">층 관리</div>
+            <div class="admin-tile-desc">건물별 층 등록</div>
+        </a>
+        <a class="admin-tile" href="{{ url_for('admin.facilities_list') }}">
+            <div class="admin-tile-title">시설 관리</div>
+            <div class="admin-tile-desc">회의실·현장점검 장소 등 시설 등록</div>
+        </a>
+        <a class="admin-tile" href="{{ url_for('admin.move_edges_list') }}">
+            <div class="admin-tile-title">이동경로 관리</div>
+            <div class="admin-tile-desc">시설·층·건물 간 이동시간(도보/엘리베이터/셔틀) 그래프</div>
+        </a>
+        <a class="admin-tile" href="{{ url_for('admin.shuttle_routes_list') }}">
+            <div class="admin-tile-title">셔틀 노선 관리</div>
+            <div class="admin-tile-desc">셔틀 노선, 운행시간, 배차간격</div>
+        </a>
+    </div>
+</section>
+
+{% endblock %}

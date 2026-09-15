@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="page-section">
+    <h2>{{ '시설 수정' if facility else '시설 등록' }}</h2>
+    <form action="{{ url_for('admin.facilities_edit', facility_id=facility['id']) if facility else url_for('admin.facilities_new') }}" method="post" class="entity-form">
+        <label>층</label>
+        <select name="floor_id" required>
+            <option value="">층 선택</option>
+            {% for f in floors %}
+            <option value="{{ f['id'] }}" {{ 'selected' if facility and facility['floor_id'] == f['id'] else '' }}>{{ f['building_name'] }} {{ f['floor_label'] }}</option>
+            {% endfor %}
+        </select>
+
+        <label>시설명</label>
+        <input type="text" name="name" value="{{ facility['name'] if facility else '' }}" required>
+
+        <label>시설 유형</label>
+        <select name="facility_type">
+            {% for value, label in facility_types %}
+            <option value="{{ value }}" {{ 'selected' if facility and facility['facility_type'] == value else '' }}>{{ label }}</option>
+            {% endfor %}
+        </select>
+
+        <label>설명</label>
+        <textarea name="description" rows="2">{{ facility['description'] if facility else '' }}</textarea>
+
+        <label>운영 시작시간 (선택, HH:MM)</label>
+        <input type="text" name="operating_hours_open" placeholder="09:00" value="{{ facility['operating_hours_open'] if facility else '' }}">
+
+        <label>운영 종료시간 (선택, HH:MM)</label>
+        <input type="text" name="operating_hours_close" placeholder="18:00" value="{{ facility['operating_hours_close'] if facility else '' }}">
+
+        <label>지도 위치 X (0~100 %, 도형 중심)</label>
+        <input type="number" step="0.1" min="0" max="100" name="pos_x" value="{{ facility['pos_x'] if facility else 50 }}">
+
+        <label>지도 위치 Y (0~100 %, 도형 중심)</label>
+        <input type="number" step="0.1" min="0" max="100" name="pos_y" value="{{ facility['pos_y'] if facility else 50 }}">
+
+        <label>도형 가로 크기 (%)</label>
+        <input type="number" step="0.1" min="1" max="100" name="shape_w" value="{{ facility['shape_w'] if facility else 8 }}">
+
+        <label>도형 세로 크기 (%)</label>
+        <input type="number" step="0.1" min="1" max="100" name="shape_h" value="{{ facility['shape_h'] if facility else 6 }}">
+        <p class="field-hint">회의실·교육장처럼 방 형태인 시설은 크게(예: 20x18), 셔틀장처럼 점적인 시설은 작게(예: 6x6) 설정하세요.</p>
+
+        {% if facility %}
+        <label class="checkbox-label">
+            <input type="checkbox" name="active" {{ 'checked' if facility['active'] else '' }}>
+            사용 중
+        </label>
+        {% endif %}
+
+        <div class="form-actions">
+            <button type="submit">저장</button>
+            <a href="{{ url_for('admin.facilities_list') }}" class="btn-cancel">취소</a>
+        </div>
+    </form>
+</section>
+
+{% endblock %}

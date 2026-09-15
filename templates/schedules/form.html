@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="page-section">
+    <h2>{{ '일정 수정' if schedule else '일정 등록' }}</h2>
+    <form action="{{ url_for('schedules.edit_schedule', schedule_id=schedule['id']) if schedule else url_for('schedules.new_schedule') }}" method="post" class="entity-form schedule-form">
+        <label>제목</label>
+        <input type="text" name="title" value="{{ schedule['title'] if schedule else '' }}" required autofocus>
+
+        <label>날짜</label>
+        <input type="date" name="date" value="{{ schedule['date'] if schedule else default_date }}" required>
+
+        <label>시작시간</label>
+        <input type="time" name="start_time" value="{{ schedule['start_time'] if schedule else '' }}" required>
+
+        <label>예상 소요시간(분)</label>
+        <input type="number" name="duration_minutes" min="0" value="{{ schedule['duration_minutes'] if schedule else 30 }}">
+
+        <label>장소(지도에서 클릭해서 선택)</label>
+        <div class="facility-picker" id="facility-picker">
+            <div class="fp-chip-row" id="fp-buildings"></div>
+            <div class="fp-chip-row" id="fp-floors"></div>
+            <div class="map-canvas map-canvas-floor fp-canvas" id="fp-canvas"></div>
+            <div class="fp-selected" id="fp-selected">선택된 장소 없음</div>
+            <button type="button" id="fp-clear" class="btn-cancel">위치 지정 안 함</button>
+        </div>
+        <input type="hidden" name="facility_id" id="facility_id_input" value="{{ schedule['facility_id'] if schedule and schedule['facility_id'] else '' }}">
+
+        <label>업무 유형 (선택)</label>
+        <input type="text" name="work_type" placeholder="회의, 현장점검 등" value="{{ schedule['work_type'] if schedule else '' }}">
+
+        <label>중요도</label>
+        <select name="priority">
+            {% for value, label in priorities %}
+            <option value="{{ value }}" {{ 'selected' if (schedule and schedule['priority'] == value) or (not schedule and value == 'normal') else '' }}>{{ label }}</option>
+            {% endfor %}
+        </select>
+
+        <label>메모</label>
+        <textarea name="memo" rows="3">{{ schedule['memo'] if schedule else '' }}</textarea>
+
+        <div class="form-actions">
+            <button type="submit">저장</button>
+            <a href="{{ url_for('schedules.day_view', date=(schedule['date'] if schedule else default_date)) }}" class="btn-cancel">취소</a>
+        </div>
+    </form>
+</section>
+
+<script id="worksite-map-data" type="application/json">{{ worksite_map|tojson }}</script>
+<script src="{{ url_for('static', filename='facility_picker.js') }}"></script>
+
+{% endblock %}

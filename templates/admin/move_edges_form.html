@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="page-section">
+    <h2>{{ '이동경로 수정' if edge else '이동경로 등록' }}</h2>
+    <form action="{{ url_for('admin.move_edges_edit', edge_id=edge['id']) if edge else url_for('admin.move_edges_new') }}" method="post" class="entity-form">
+        <label>출발 지점</label>
+        <select name="from_node" required>
+            <option value="">선택</option>
+            {% for n in nodes %}
+            <option value="{{ n.type }}:{{ n.id }}" {{ 'selected' if current_from == n.type ~ ':' ~ n.id else '' }}>{{ n.label }}</option>
+            {% endfor %}
+        </select>
+
+        <label>도착 지점</label>
+        <select name="to_node" required>
+            <option value="">선택</option>
+            {% for n in nodes %}
+            <option value="{{ n.type }}:{{ n.id }}" {{ 'selected' if current_to == n.type ~ ':' ~ n.id else '' }}>{{ n.label }}</option>
+            {% endfor %}
+        </select>
+
+        <label>이동 수단</label>
+        <select name="mode">
+            {% for value, label in modes %}
+            <option value="{{ value }}" {{ 'selected' if edge and edge['mode'] == value else '' }}>{{ label }}</option>
+            {% endfor %}
+        </select>
+
+        <label>소요시간(분)</label>
+        <input type="number" name="minutes" min="0" value="{{ edge['minutes'] if edge else '' }}" required>
+
+        <label class="checkbox-label">
+            <input type="checkbox" name="bidirectional" {{ 'checked' if (edge is none) or edge['bidirectional'] else '' }}>
+            양방향 이동 가능
+        </label>
+
+        {% if edge %}
+        <label class="checkbox-label">
+            <input type="checkbox" name="active" {{ 'checked' if edge['active'] else '' }}>
+            사용 중
+        </label>
+        {% endif %}
+
+        <p class="field-hint">셔틀 경로는 편도(순환)인 경우가 많으니 양방향 체크를 해제하세요.</p>
+
+        <div class="form-actions">
+            <button type="submit">저장</button>
+            <a href="{{ url_for('admin.move_edges_list') }}" class="btn-cancel">취소</a>
+        </div>
+    </form>
+</section>
+
+{% endblock %}

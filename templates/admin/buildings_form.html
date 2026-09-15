@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="page-section">
+    <h2>{{ '건물 수정' if building else '건물 등록' }}</h2>
+    <form action="{{ url_for('admin.buildings_edit', building_id=building['id']) if building else url_for('admin.buildings_new') }}" method="post" class="entity-form">
+        <label>건물명</label>
+        <input type="text" name="name" value="{{ building['name'] if building else '' }}" required>
+
+        <label>지도 위치 X (0~100 %)</label>
+        <input type="number" step="0.1" min="0" max="100" name="pos_x" value="{{ building['pos_x'] if building else 50 }}">
+
+        <label>지도 위치 Y (0~100 %)</label>
+        <input type="number" step="0.1" min="0" max="100" name="pos_y" value="{{ building['pos_y'] if building else 50 }}">
+
+        <p class="field-hint">사업장 전체 지도에서 이 건물 마커가 표시될 상대 위치입니다.</p>
+
+        <div class="form-actions">
+            <button type="submit">저장</button>
+            <a href="{{ url_for('admin.buildings_list') }}" class="btn-cancel">취소</a>
+        </div>
+    </form>
+</section>
+
+{% endblock %}

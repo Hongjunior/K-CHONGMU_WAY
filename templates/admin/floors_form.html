@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="page-section">
+    <h2>{{ '층 수정' if floor else '층 등록' }}</h2>
+    <form action="{{ url_for('admin.floors_edit', floor_id=floor['id']) if floor else url_for('admin.floors_new') }}" method="post" class="entity-form">
+        <label>건물</label>
+        <select name="building_id" required>
+            <option value="">건물 선택</option>
+            {% for b in buildings %}
+            <option value="{{ b['id'] }}" {{ 'selected' if floor and floor['building_id'] == b['id'] else '' }}>{{ b['name'] }}</option>
+            {% endfor %}
+        </select>
+
+        <label>층 이름 (예: 6층, B1)</label>
+        <input type="text" name="floor_label" value="{{ floor['floor_label'] if floor else '' }}" required>
+
+        <label>정렬 순서 (낮을수록 먼저 표시)</label>
+        <input type="number" name="floor_order" value="{{ floor['floor_order'] if floor else 0 }}">
+
+        <div class="form-actions">
+            <button type="submit">저장</button>
+            <a href="{{ url_for('admin.floors_list') }}" class="btn-cancel">취소</a>
+        </div>
+    </form>
+</section>
+
+{% endblock %}

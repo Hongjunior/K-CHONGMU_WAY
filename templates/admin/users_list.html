@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="page-section">
+    <div class="page-header">
+        <h2>사용자 관리</h2>
+        <a class="btn-link" href="{{ url_for('admin.dashboard') }}">← 대시보드</a>
+    </div>
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>ID</th><th>아이디</th><th>권한</th><th>현재 사업장</th><th>가입일</th><th></th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for u in users %}
+            <tr>
+                <td>{{ u['id'] }}</td>
+                <td>{{ u['username'] }}</td>
+                <td><span class="badge badge-{{ u['role'] }}">{{ role_labels[u['role']] }}</span></td>
+                <td>{{ u['worksite_name'] or '-' }}</td>
+                <td>{{ u['created_at'] }}</td>
+                <td>
+                    {% if u['id'] != session.user_id %}
+                    <form action="{{ url_for('admin.users_toggle_role', user_id=u['id']) }}" method="post">
+                        <button type="submit" class="btn-edit">
+                            {{ '관리자로 변경' if u['role'] == 'user' else '일반사용자로 변경' }}
+                        </button>
+                    </form>
+                    {% else %}
+                    <span class="muted">본인 계정</span>
+                    {% endif %}
+                </td>
+            </tr>
+        {% else %}
+            <tr><td colspan="6" class="empty-state">등록된 사용자가 없습니다.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</section>
+
+{% endblock %}
