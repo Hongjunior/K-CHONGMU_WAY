@@ -1,3 +1,4 @@
+from collections import Counter
 from datetime import date as date_cls
 from datetime import datetime, timedelta
 
@@ -5,13 +6,24 @@ from flask import Blueprint, flash, jsonify, redirect, render_template, request,
 from sqlalchemy import bindparam, text
 
 from blueprints.auth import login_required, worksite_required
-from constants import PRIORITIES, PRIORITY_LABELS, STATUS_LABELS, STATUSES
+from constants import (
+    DURATION_OPTIONS,
+    PRIORITIES,
+    PRIORITY_LABELS,
+    SCHEDULE_CATEGORIES,
+    SCHEDULE_CATEGORY_LABELS,
+    STATUS_LABELS,
+)
 from db import IS_POSTGRES, engine
 from routing import travel_minutes_between_facilities
 
 schedules_bp = Blueprint("schedules", __name__, url_prefix="/schedules")
 
 NOW_EXPR = "NOW()" if IS_POSTGRES else "(datetime('now', 'localtime'))"
+
+# Fallback start-of-day used only to give a flexible ("시간없음") schedule item
+# somewhere to land before the first fixed-time item of the day.
+DAY_START = "08:00"
 
 
 def _worksite_id():
@@ -64,16 +76,6 @@ def _worksite_map_for_picker(conn):
     return result
 
 
-def _end_time_str(start_time, duration_minutes):
-    if not duration_minutes:
-        return None
-    try:
-        start_dt = datetime.strptime(start_time, "%H:%M")
-    except (ValueError, TypeError):
-        return None
-    return (start_dt + timedelta(minutes=duration_minutes)).strftime("%H:%M")
-
-
 def _safe_date(date_str):
     try:
         return date_cls.fromisoformat(date_str).isoformat()
@@ -81,74 +83,179 @@ def _safe_date(date_str):
         return date_cls.today().isoformat()
 
 
+def _parse_hhmm(value):
+    try:
+        return datetime.strptime(value, "%H:%M")
+    except (ValueError, TypeError):
+        return None
+
+
+def _facility_labels_for(conn, schedules):
+    facility_labels = {}
+    fac_ids = {s["facility_id"] for s in schedules if s["facility_id"]}
+    if fac_ids:
+        stmt = text(
+            "SELECT fac.id, fac.name, fl.floor_label, b.name AS building_name FROM facilities fac "
+            "JOIN floors fl ON fl.id = fac.floor_id "
+            "JOIN buildings b ON b.id = fl.building_id "
+            "WHERE fac.id IN :ids"
+        ).bindparams(bindparam("ids", expanding=True))
+        rows = conn.execute(stmt, {"ids": list(fac_ids)}).mappings().all()
+        for r in rows:
+            facility_labels[r["id"]] = f"{r['building_name']} {r['floor_label']} {r['name']}"
+    return facility_labels
+
+
+def _place_flexible_items(conn, worksite_id, fixed, flexible):
+    """Merge fixed-time schedules with time-flexible ("시간없음") ones by
+    greedily inserting each flexible item into the tightest-fitting gap of the
+    day's timeline, based on travel time to/from its neighbours. Plain
+    algorithm (Dijkstra + greedy best-fit) — no AI/LLM call, consistent with
+    the rest of routing.py.
+
+    Returns a start_dt-sorted list of {schedule, start_dt, end_dt, auto_placed}.
+    """
+    timeline = []
+    for s in fixed:
+        start_dt = _parse_hhmm(s["start_time"])
+        if start_dt is None:
+            continue
+        end_dt = start_dt + timedelta(minutes=s["duration_minutes"] or 0)
+        timeline.append({"schedule": s, "start_dt": start_dt, "end_dt": end_dt, "auto_placed": False})
+    timeline.sort(key=lambda e: e["start_dt"])
+
+    priority_rank = {"high": 0, "normal": 1, "low": 2}
+    ordered_flexible = sorted(
+        flexible, key=lambda s: (priority_rank.get(s["priority"], 1), s["id"])
+    )
+
+    day_start_dt = _parse_hhmm(DAY_START)
+
+    for sched in ordered_flexible:
+        duration = sched["duration_minutes"] or 0
+        candidates = []  # (slack_minutes, insert_index, start_dt)
+
+        for i in range(len(timeline) + 1):
+            prev_entry = timeline[i - 1] if i > 0 else None
+            next_entry = timeline[i] if i < len(timeline) else None
+
+            gap_start = prev_entry["end_dt"] if prev_entry else day_start_dt
+            gap_end = next_entry["start_dt"] if next_entry else None
+
+            prev_facility = prev_entry["schedule"]["facility_id"] if prev_entry else None
+            next_facility = next_entry["schedule"]["facility_id"] if next_entry else None
+
+            travel_in = 0
+            if prev_facility and sched["facility_id"]:
+                travel_in, _ = travel_minutes_between_facilities(
+                    conn, worksite_id, prev_facility, sched["facility_id"]
+                )
+            travel_out = 0
+            if next_facility and sched["facility_id"]:
+                travel_out, _ = travel_minutes_between_facilities(
+                    conn, worksite_id, sched["facility_id"], next_facility
+                )
+            if travel_in is None or travel_out is None:
+                continue  # no path exists between this gap's neighbours and here
+
+            start_dt = gap_start + timedelta(minutes=travel_in)
+
+            if gap_end is None:
+                candidates.append((10**6, i, start_dt))  # open-ended fallback slot
+            else:
+                available = (gap_end - gap_start).total_seconds() / 60
+                required = travel_in + duration + travel_out
+                if required <= available:
+                    candidates.append((available - required, i, start_dt))
+
+        if candidates:
+            candidates.sort(key=lambda c: c[0])
+            _, insert_index, start_dt = candidates[0]
+        else:
+            # Every gap was unreachable — place it at the very end anyway so it
+            # never silently disappears; the day view's travel warning will
+            # flag it as unreachable from its neighbour.
+            insert_index = len(timeline)
+            start_dt = timeline[-1]["end_dt"] if timeline else day_start_dt
+
+        end_dt = start_dt + timedelta(minutes=duration)
+        timeline.insert(insert_index, {
+            "schedule": sched, "start_dt": start_dt, "end_dt": end_dt, "auto_placed": True,
+        })
+
+    timeline.sort(key=lambda e: e["start_dt"])
+    return timeline
+
+
+def get_day_items(conn, user_id, worksite_id, date_str):
+    """Ordered schedule items for one user/day, with time-flexible items
+    auto-inserted into the tightest gap and per-pair travel/gap/warning info
+    computed. Shared by the day view and the day-route map page."""
+    schedules = conn.execute(
+        text("SELECT * FROM schedules WHERE user_id = :u AND worksite_id = :w AND date = :d"),
+        {"u": user_id, "w": worksite_id, "d": date_str},
+    ).mappings().all()
+
+    facility_labels = _facility_labels_for(conn, schedules)
+
+    fixed = [s for s in schedules if s["start_time"]]
+    flexible = [s for s in schedules if not s["start_time"]]
+    timeline = _place_flexible_items(conn, worksite_id, fixed, flexible)
+
+    items = []
+    prev = None
+    for entry in timeline:
+        sched = entry["schedule"]
+        gap_minutes = None
+        travel = None
+        unreachable = False
+        warning = False
+
+        if prev is not None:
+            gap_minutes = int((entry["start_dt"] - prev["end_dt"]).total_seconds() // 60)
+            if prev["schedule"]["facility_id"] and sched["facility_id"]:
+                travel, _path = travel_minutes_between_facilities(
+                    conn, worksite_id, prev["schedule"]["facility_id"], sched["facility_id"]
+                )
+                if travel is None:
+                    unreachable = True
+                elif travel > gap_minutes:
+                    warning = True
+
+        items.append(
+            {
+                "schedule": sched,
+                "facility_label": facility_labels.get(sched["facility_id"]),
+                "start_time": entry["start_dt"].strftime("%H:%M"),
+                "end_time": entry["end_dt"].strftime("%H:%M") if sched["duration_minutes"] else None,
+                "gap_minutes": gap_minutes,
+                "travel_minutes": travel,
+                "unreachable": unreachable,
+                "warning": warning,
+                "auto_placed": entry["auto_placed"],
+            }
+        )
+        prev = entry
+
+    return items
+
+
 @schedules_bp.route("/")
 @login_required
 @worksite_required
 def day_view():
     date_str = _safe_date(request.args.get("date") or date_cls.today().isoformat())
+    category_filter = request.args.get("category")
+    if category_filter not in SCHEDULE_CATEGORY_LABELS:
+        category_filter = None
 
     with engine.connect() as conn:
-        schedules = conn.execute(
-            text(
-                "SELECT * FROM schedules WHERE user_id = :u AND worksite_id = :w AND date = :d "
-                "ORDER BY start_time"
-            ),
-            {"u": _user_id(), "w": _worksite_id(), "d": date_str},
-        ).mappings().all()
+        items = get_day_items(conn, _user_id(), _worksite_id(), date_str)
 
-        facility_labels = {}
-        if schedules:
-            fac_ids = {s["facility_id"] for s in schedules if s["facility_id"]}
-            if fac_ids:
-                stmt = text(
-                    "SELECT fac.id, fac.name, fl.floor_label, b.name AS building_name FROM facilities fac "
-                    "JOIN floors fl ON fl.id = fac.floor_id "
-                    "JOIN buildings b ON b.id = fl.building_id "
-                    "WHERE fac.id IN :ids"
-                ).bindparams(bindparam("ids", expanding=True))
-                rows = conn.execute(stmt, {"ids": list(fac_ids)}).mappings().all()
-                for r in rows:
-                    facility_labels[r["id"]] = f"{r['building_name']} {r['floor_label']} {r['name']}"
+    category_counts = Counter((item["schedule"]["work_type"] or "etc") for item in items)
 
-        items = []
-        prev = None
-        for sched in schedules:
-            end_str = _end_time_str(sched["start_time"], sched["duration_minutes"])
-            gap_minutes = None
-            travel = None
-            unreachable = False
-            warning = False
-
-            if prev is not None:
-                prev_end = _end_time_str(prev["start_time"], prev["duration_minutes"]) or prev["start_time"]
-                try:
-                    prev_end_dt = datetime.strptime(prev_end, "%H:%M")
-                    start_dt = datetime.strptime(sched["start_time"], "%H:%M")
-                    gap_minutes = int((start_dt - prev_end_dt).total_seconds() // 60)
-                except (ValueError, TypeError):
-                    gap_minutes = None
-
-                if prev["facility_id"] and sched["facility_id"]:
-                    travel, _path = travel_minutes_between_facilities(
-                        conn, _worksite_id(), prev["facility_id"], sched["facility_id"]
-                    )
-                    if travel is None:
-                        unreachable = True
-                    elif gap_minutes is not None and travel > gap_minutes:
-                        warning = True
-
-            items.append(
-                {
-                    "schedule": sched,
-                    "facility_label": facility_labels.get(sched["facility_id"]),
-                    "end_time": end_str,
-                    "gap_minutes": gap_minutes,
-                    "travel_minutes": travel,
-                    "unreachable": unreachable,
-                    "warning": warning,
-                }
-            )
-            prev = sched
+    if category_filter:
+        items = [item for item in items if (item["schedule"]["work_type"] or "etc") == category_filter]
 
     cur_date = date_cls.fromisoformat(date_str)
     return render_template(
@@ -159,8 +266,11 @@ def day_view():
         next_date=(cur_date + timedelta(days=1)).isoformat(),
         status_labels=STATUS_LABELS,
         priority_labels=PRIORITY_LABELS,
-        statuses=STATUSES,
         today=date_cls.today().isoformat(),
+        categories=SCHEDULE_CATEGORIES,
+        category_labels=SCHEDULE_CATEGORY_LABELS,
+        category_counts=category_counts,
+        category_filter=category_filter,
     )
 
 
@@ -176,18 +286,21 @@ def new_schedule():
 
     if request.method == "POST":
         form = request.form
-        title = form.get("title", "").strip()
+        category = form.get("category", "etc")
+        if category not in SCHEDULE_CATEGORY_LABELS:
+            category = "etc"
         sched_date = form.get("date", "").strip()
-        start_time = form.get("start_time", "").strip()
+        no_fixed_time = bool(form.get("no_fixed_time"))
+        start_time = "" if no_fixed_time else form.get("start_time", "").strip()
         duration = form.get("duration_minutes", type=int)
         facility_id = form.get("facility_id", type=int)
-        work_type = form.get("work_type", "").strip() or None
         priority = form.get("priority", "normal")
         memo = form.get("memo", "").strip() or None
+        title = SCHEDULE_CATEGORY_LABELS[category]
 
         valid_facility = facility_id is None or any(f["id"] == facility_id for f in facilities)
-        if not title or not sched_date or not start_time or not valid_facility:
-            flash("제목, 날짜, 시작시간을 올바르게 입력해주세요.", "error")
+        if not sched_date or (not no_fixed_time and not start_time) or not duration or not valid_facility:
+            flash("날짜, 시작시간(또는 시간없음), 소요시간을 올바르게 입력해주세요.", "error")
             return redirect(url_for("schedules.new_schedule", date=default_date))
         if priority not in PRIORITY_LABELS:
             priority = "normal"
@@ -208,7 +321,7 @@ def new_schedule():
                     "st": start_time,
                     "dur": duration,
                     "fac": facility_id,
-                    "wt": work_type,
+                    "wt": category,
                     "p": priority,
                     "m": memo,
                 },
@@ -222,6 +335,8 @@ def new_schedule():
         facilities=facilities,
         worksite_map=worksite_map,
         priorities=PRIORITIES,
+        categories=SCHEDULE_CATEGORIES,
+        duration_options=DURATION_OPTIONS,
         default_date=default_date,
     )
 
@@ -244,18 +359,21 @@ def edit_schedule(schedule_id):
 
     if request.method == "POST":
         form = request.form
-        title = form.get("title", "").strip()
+        category = form.get("category", "etc")
+        if category not in SCHEDULE_CATEGORY_LABELS:
+            category = "etc"
         sched_date = form.get("date", "").strip()
-        start_time = form.get("start_time", "").strip()
+        no_fixed_time = bool(form.get("no_fixed_time"))
+        start_time = "" if no_fixed_time else form.get("start_time", "").strip()
         duration = form.get("duration_minutes", type=int)
         facility_id = form.get("facility_id", type=int)
-        work_type = form.get("work_type", "").strip() or None
         priority = form.get("priority", "normal")
         memo = form.get("memo", "").strip() or None
+        title = SCHEDULE_CATEGORY_LABELS[category]
 
         valid_facility = facility_id is None or any(f["id"] == facility_id for f in facilities)
-        if not title or not sched_date or not start_time or not valid_facility:
-            flash("제목, 날짜, 시작시간을 올바르게 입력해주세요.", "error")
+        if not sched_date or (not no_fixed_time and not start_time) or not duration or not valid_facility:
+            flash("날짜, 시작시간(또는 시간없음), 소요시간을 올바르게 입력해주세요.", "error")
             return redirect(url_for("schedules.edit_schedule", schedule_id=schedule_id))
         if priority not in PRIORITY_LABELS:
             priority = "normal"
@@ -273,7 +391,7 @@ def edit_schedule(schedule_id):
                     "st": start_time,
                     "dur": duration,
                     "fac": facility_id,
-                    "wt": work_type,
+                    "wt": category,
                     "p": priority,
                     "m": memo,
                     "id": schedule_id,
@@ -289,6 +407,8 @@ def edit_schedule(schedule_id):
         facilities=facilities,
         worksite_map=worksite_map,
         priorities=PRIORITIES,
+        categories=SCHEDULE_CATEGORIES,
+        duration_options=DURATION_OPTIONS,
         default_date=schedule["date"],
     )
 

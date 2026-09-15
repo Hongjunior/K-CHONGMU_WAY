@@ -28,3 +28,14 @@ PRIORITY_LABELS = dict(PRIORITIES)
 
 STATUSES = [("planned", "예정"), ("done", "완료"), ("on_hold", "보류")]
 STATUS_LABELS = dict(STATUSES)
+
+SCHEDULE_CATEGORIES = [
+    ("inspection", "점검"),
+    ("meeting", "회의"),
+    ("supply", "비품"),
+    ("settlement", "정산"),
+    ("etc", "기타"),
+]
+SCHEDULE_CATEGORY_LABELS = dict(SCHEDULE_CATEGORIES)
+
+DURATION_OPTIONS = [15, 30, 45, 60, 90, 120, 180]

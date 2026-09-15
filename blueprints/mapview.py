@@ -1,12 +1,14 @@
-from datetime import datetime
+from datetime import date as date_cls
+from datetime import datetime, timedelta
 
 from flask import Blueprint, abort, render_template, request, session
 from sqlalchemy import text
 
 from blueprints.auth import login_required, worksite_required
+from blueprints.schedules import get_day_items
 from constants import FACILITY_TYPE_LABELS
 from db import engine
-from routing import generate_timetable, next_shuttle_departure
+from routing import generate_timetable, next_shuttle_departure, travel_minutes_between_facilities
 
 mapview_bp = Blueprint("mapview", __name__, url_prefix="/map")
 
@@ -231,6 +233,110 @@ def shuttle_map():
         buildings=buildings,
         segments=segments,
         decorative_landmarks=DECORATIVE_LANDMARKS,
+    )
+
+
+def _facility_building(conn, facility_id):
+    return conn.execute(
+        text(
+            "SELECT b.id, b.name, b.pos_x, b.pos_y FROM facilities fac "
+            "JOIN floors fl ON fl.id = fac.floor_id "
+            "JOIN buildings b ON b.id = fl.building_id "
+            "WHERE fac.id = :id"
+        ),
+        {"id": facility_id},
+    ).mappings().first()
+
+
+def _shuttle_route_name_for(conn, worksite_id, dep_building_id, arr_building_id):
+    return conn.execute(
+        text(
+            "SELECT sr.route_name FROM shuttle_routes sr "
+            "JOIN facilities fd ON fd.id = sr.departure_facility_id "
+            "JOIN floors fld ON fld.id = fd.floor_id "
+            "JOIN facilities fa ON fa.id = sr.arrival_facility_id "
+            "JOIN floors fla ON fla.id = fa.floor_id "
+            "WHERE sr.worksite_id = :w AND sr.active "
+            "AND fld.building_id = :dep AND fla.building_id = :arr "
+            "LIMIT 1"
+        ),
+        {"w": worksite_id, "dep": dep_building_id, "arr": arr_building_id},
+    ).scalar()
+
+
+@mapview_bp.route("/day-route")
+@login_required
+@worksite_required
+def day_route():
+    try:
+        cur_date = date_cls.fromisoformat(request.args.get("date") or "")
+    except ValueError:
+        cur_date = date_cls.today()
+    date_str = cur_date.isoformat()
+
+    with engine.connect() as conn:
+        items = get_day_items(conn, session["user_id"], _worksite_id(), date_str)
+        buildings = conn.execute(
+            text("SELECT * FROM buildings WHERE worksite_id = :w ORDER BY name"),
+            {"w": _worksite_id()},
+        ).mappings().all()
+
+        located = [it for it in items if it["schedule"]["facility_id"]]
+
+        stops = []
+        for idx, it in enumerate(located):
+            b = _facility_building(conn, it["schedule"]["facility_id"])
+            stops.append(
+                {
+                    "order": idx + 1,
+                    "pos_x": b["pos_x"],
+                    "pos_y": b["pos_y"],
+                    "label": it["facility_label"] or b["name"],
+                    "start_time": it["start_time"],
+                }
+            )
+
+        palette = ["#FB8520", "#2f6feb", "#2e7d32", "#8e44ad", "#c0392b", "#00897b"]
+        hops = []
+        for i in range(len(located) - 1):
+            a_item, b_item = located[i], located[i + 1]
+            a_fac = a_item["schedule"]["facility_id"]
+            b_fac = b_item["schedule"]["facility_id"]
+            a_b = _facility_building(conn, a_fac)
+            b_b = _facility_building(conn, b_fac)
+
+            travel, path = travel_minutes_between_facilities(conn, _worksite_id(), a_fac, b_fac)
+            is_shuttle = bool(path) and any(mode == "shuttle" for _n, mode, _m in path)
+            same_building = a_b["id"] == b_b["id"]
+
+            points = [(a_b["pos_x"], a_b["pos_y"])]
+            if is_shuttle:
+                route_name = _shuttle_route_name_for(conn, _worksite_id(), a_b["id"], b_b["id"])
+                points.extend(ROUTE_VIA_POINTS.get(route_name, []))
+            points.append((b_b["pos_x"], b_b["pos_y"]))
+
+            hops.append(
+                {
+                    "order": i + 1,
+                    "mode": "shuttle" if is_shuttle else ("same" if same_building else "walk"),
+                    "color": palette[i % len(palette)],
+                    "points": " ".join(f"{x},{y}" for x, y in points),
+                    "travel_minutes": travel,
+                    "from_label": a_item["facility_label"],
+                    "to_label": b_item["facility_label"],
+                }
+            )
+
+    return render_template(
+        "map/day_route.html",
+        buildings=buildings,
+        decorative_landmarks=DECORATIVE_LANDMARKS,
+        stops=stops,
+        hops=hops,
+        date_str=date_str,
+        prev_date=(cur_date - timedelta(days=1)).isoformat(),
+        next_date=(cur_date + timedelta(days=1)).isoformat(),
+        today=date_cls.today().isoformat(),
     )
 
 

@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="page-section">
+    <div class="page-header">
+        <h2>오늘의 총동선</h2>
+        <a class="btn-link" href="{{ url_for('mapview.overview') }}">← 사업장 지도</a>
+    </div>
+    <p class="page-hint">그날 등록된 일정을 방문 순서대로 이어서 보여줍니다. 셔틀 구간은 실선, 도보 구간은 점선으로 표시됩니다.</p>
+
+    <div class="date-nav">
+        <a href="{{ url_for('mapview.day_route', date=prev_date) }}">← 전날</a>
+        <form method="get" class="date-nav-form">
+            <input type="date" name="date" value="{{ date_str }}" onchange="this.form.submit()">
+        </form>
+        <a href="{{ url_for('mapview.day_route', date=next_date) }}">다음날 →</a>
+        {% if date_str != today %}
+        <a class="btn-link" href="{{ url_for('mapview.day_route', date=today) }}">오늘로</a>
+        {% endif %}
+    </div>
+
+    {% if stops %}
+    <div class="map-canvas map-canvas-site" style="position: relative;">
+        <svg class="route-overlay" viewBox="0 0 100 100" preserveAspectRatio="none">
+            <defs>
+                {% for hop in hops %}
+                {% if hop.mode != 'same' %}
+                <marker id="hop-arrow-{{ loop.index0 }}" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto" markerUnits="strokeWidth">
+                    <path d="M0,0 L6,3 L0,6 Z" fill="{{ hop.color }}"></path>
+                </marker>
+                {% endif %}
+                {% endfor %}
+            </defs>
+            {% for hop in hops %}
+            {% if hop.mode != 'same' %}
+            <polyline
+                points="{{ hop.points }}"
+                fill="none"
+                stroke="{{ hop.color }}" stroke-width="0.7"
+                stroke-dasharray="{{ '2,1.5' if hop.mode == 'walk' else '0' }}"
+                marker-end="url(#hop-arrow-{{ loop.index0 }})"
+            ><title>{{ hop.order }}. {{ hop.from_label }} → {{ hop.to_label }} ({{ '도보' if hop.mode == 'walk' else '셔틀' }} {{ hop.travel_minutes }}분)</title></polyline>
+            {% endif %}
+            {% endfor %}
+        </svg>
+
+        {% for b in buildings %}
+        <div class="map-marker marker-building" style="left: {{ b['pos_x'] }}%; top: {{ b['pos_y'] }}%;">
+            <span class="marker-dot"></span>
+            <span class="marker-label">{{ b['name'] }}</span>
+        </div>
+        {% endfor %}
+
+        {% for d in decorative_landmarks %}
+        <div class="map-marker marker-building marker-building-disabled" style="left: {{ d['pos_x'] }}%; top: {{ d['pos_y'] }}%;" title="{{ d['name'] }} (사내 임직원 이용 시설 아님)">
+            <span class="marker-dot"></span>
+            <span class="marker-label">{{ d['name'] }}</span>
+        </div>
+        {% endfor %}
+
+        {% for s in stops %}
+        <div class="map-marker marker-stop" style="left: {{ s.pos_x }}%; top: {{ s.pos_y }}%;" title="{{ s.order }}. {{ s.label }} ({{ s.start_time }})">
+            <span class="marker-dot marker-stop-dot">{{ s.order }}</span>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="route-legend">
+        <span class="route-legend-item"><span class="route-legend-swatch" style="background: var(--color-primary);"></span> 셔틀 구간 (실선)</span>
+        <span class="route-legend-item"><span class="route-legend-swatch route-legend-dashed"></span> 도보 구간 (점선)</span>
+    </div>
+
+    <ol class="day-route-itinerary">
+        {% for s in stops %}
+        <li>
+            <span class="day-route-time">{{ s.start_time }}</span>
+            <span class="day-route-label">{{ s.label }}</span>
+        </li>
+        {% if not loop.last %}
+        {% set hop = hops[loop.index0] %}
+        <li class="day-route-hop">
+            {{ '🚌 셔틀' if hop.mode == 'shuttle' else ('🚶 도보' if hop.mode == 'walk' else '🏢 동일 건물') }}
+            {% if hop.travel_minutes is not none %}{{ hop.travel_minutes }}분 소요{% else %}(경로 정보 없음){% endif %}
+        </li>
+        {% endif %}
+        {% endfor %}
+    </ol>
+    {% else %}
+    <p class="empty-state">이 날짜에 위치가 지정된 일정이 없습니다.</p>
+    {% endif %}
+</section>
+
+{% endblock %}

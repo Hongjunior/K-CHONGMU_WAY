@@ -737,6 +737,29 @@ a {
 
 /* ---------- Schedules ---------- */
 
+.category-filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.category-pill {
+    padding: 6px 14px;
+    border-radius: 20px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-muted);
+    text-decoration: none;
+    font-size: 13px;
+}
+
+.category-pill.active {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: #fff;
+}
+
 .date-nav {
     display: flex;
     align-items: center;
@@ -797,6 +820,36 @@ a {
 
 .schedule-card.status-on_hold {
     border-left-color: #e3a83b;
+}
+
+.schedule-card.auto-placed {
+    border-left-style: dashed;
+}
+
+.badge-auto {
+    background: var(--color-primary-light);
+    color: var(--color-primary-dark);
+}
+
+.todo-check {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--color-text-muted);
+    cursor: pointer;
+}
+
+.todo-check input {
+    width: 15px;
+    height: 15px;
+    cursor: pointer;
+}
+
+.btn-edit.active {
+    background: #fdf3de;
+    color: #a6710b;
+    border-color: #e3a83b;
 }
 
 .schedule-time {
@@ -1005,6 +1058,52 @@ a {
     height: 3px;
     border-radius: 2px;
     display: inline-block;
+    background: var(--color-primary);
+}
+
+.route-legend-dashed {
+    background: none;
+    border-top: 2px dashed var(--color-text-muted);
+    height: 0;
+}
+
+.marker-stop-dot {
+    width: 20px;
+    height: 20px;
+    background: var(--color-primary-dark);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.day-route-itinerary {
+    list-style: none;
+    margin: 16px 0 0;
+    padding: 0;
+}
+
+.day-route-itinerary li {
+    padding: 6px 0;
+}
+
+.day-route-time {
+    display: inline-block;
+    width: 56px;
+    font-weight: 700;
+    color: var(--color-text);
+}
+
+.day-route-label {
+    font-size: 14px;
+}
+
+.day-route-hop {
+    margin-left: 56px;
+    font-size: 12px;
+    color: var(--color-text-muted);
 }
 
 /* ---------- Reminder toast ---------- */

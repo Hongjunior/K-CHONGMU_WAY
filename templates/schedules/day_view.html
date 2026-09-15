@@ -4,10 +4,21 @@
 <section class="page-section">
     <div class="page-header">
         <h2>내 일정</h2>
-        <a class="btn-primary" href="{{ url_for('schedules.new_schedule', date=date_str) }}">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="vertical-align: -2px; margin-right: 4px;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-            일정 등록
-        </a>
+        <div>
+            <a class="btn-link" href="{{ url_for('mapview.day_route', date=date_str) }}">오늘 동선 지도 보기 →</a>
+            &nbsp;
+            <a class="btn-primary" href="{{ url_for('schedules.new_schedule', date=date_str) }}">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="vertical-align: -2px; margin-right: 4px;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                일정 등록
+            </a>
+        </div>
+    </div>
+
+    <div class="category-filter-bar">
+        <a class="category-pill {{ 'active' if not category_filter else '' }}" href="{{ url_for('schedules.day_view', date=date_str) }}">전체 {{ category_counts.values() | sum }}</a>
+        {% for value, label in categories %}
+        <a class="category-pill {{ 'active' if category_filter == value else '' }}" href="{{ url_for('schedules.day_view', date=date_str, category=value) }}">{{ label }} {{ category_counts.get(value, 0) }}</a>
+        {% endfor %}
     </div>
 
     <div class="date-nav">
@@ -25,7 +36,7 @@
         {% for item in items %}
         {% set s = item.schedule %}
 
-        {% if item.gap_minutes is not none %}
+        {% if item.gap_minutes is not none and not category_filter %}
         <div class="travel-gap {{ 'warning' if item.warning else '' }} {{ 'unreachable' if item.unreachable else '' }}">
             {% if item.unreachable %}
                 이전 일정 장소에서 이동 경로 정보가 없습니다.
@@ -38,11 +49,11 @@
         </div>
         {% endif %}
 
-        <div class="schedule-card status-{{ s.status }}">
+        <div class="schedule-card status-{{ s.status }} {{ 'auto-placed' if item.auto_placed else '' }}">
             <div class="schedule-time">
                 <div class="schedule-start">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -1px; margin-right: 2px;"><circle cx="12" cy="12" r="9"></circle><polyline points="12 7 12 12 15 14"></polyline></svg>
-                    {{ s.start_time }}
+                    {{ '약 ' if item.auto_placed else '' }}{{ item.start_time }}
                 </div>
                 {% if item.end_time %}<div class="schedule-end">~{{ item.end_time }}</div>{% endif %}
             </div>
@@ -51,6 +62,7 @@
                     <span class="schedule-title">{{ s.title }}</span>
                     <span class="badge">{{ priority_labels.get(s.priority, s.priority) }}</span>
                     <span class="badge badge-status-{{ s.status }}">{{ status_labels.get(s.status, s.status) }}</span>
+                    {% if item.auto_placed %}<span class="badge badge-auto">자동배치</span>{% endif %}
                 </div>
                 {% if item.facility_label %}
                 <div class="schedule-loc">
@@ -68,11 +80,16 @@
             <div class="schedule-actions">
                 <form action="{{ url_for('schedules.update_status', schedule_id=s.id) }}" method="post">
                     <input type="hidden" name="date" value="{{ date_str }}">
-                    <select name="status" onchange="this.form.submit()">
-                        {% for value, label in statuses %}
-                        <option value="{{ value }}" {{ 'selected' if s.status == value else '' }}>{{ label }}</option>
-                        {% endfor %}
-                    </select>
+                    <input type="hidden" name="status" value="{{ 'planned' if s.status == 'done' else 'done' }}">
+                    <label class="todo-check" title="완료">
+                        <input type="checkbox" {{ 'checked' if s.status == 'done' else '' }} onchange="this.form.requestSubmit()">
+                        완료
+                    </label>
+                </form>
+                <form action="{{ url_for('schedules.update_status', schedule_id=s.id) }}" method="post">
+                    <input type="hidden" name="date" value="{{ date_str }}">
+                    <input type="hidden" name="status" value="{{ 'planned' if s.status == 'on_hold' else 'on_hold' }}">
+                    <button type="submit" class="btn-edit {{ 'active' if s.status == 'on_hold' else '' }}">보류</button>
                 </form>
                 <a class="btn-edit" href="{{ url_for('schedules.edit_schedule', schedule_id=s.id) }}">수정</a>
                 <form action="{{ url_for('schedules.delete_schedule', schedule_id=s.id) }}" method="post" onsubmit="return confirm('삭제하시겠습니까?');">
