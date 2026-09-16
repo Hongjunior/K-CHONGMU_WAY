@@ -143,3 +143,82 @@ def generate_timetable(operation_start, operation_end, interval_minutes):
         times.append(cur.strftime("%H:%M"))
         cur += timedelta(minutes=interval_minutes)
     return times
+
+
+def facility_building(conn, facility_id):
+    """The building a facility sits in (id/name/pos_x/pos_y), for map placement."""
+    return conn.execute(
+        text(
+            "SELECT b.id, b.name, b.pos_x, b.pos_y FROM facilities fac "
+            "JOIN floors fl ON fl.id = fac.floor_id "
+            "JOIN buildings b ON b.id = fl.building_id "
+            "WHERE fac.id = :id"
+        ),
+        {"id": facility_id},
+    ).mappings().first()
+
+
+def elbow_points(x1, y1, x2, y2):
+    """A right-angle "follows the road grid" bend between two map points instead
+    of a diagonal straight line cutting across buildings — routes along the
+    longer axis first, then turns 90°, echoing how a site map's roads tend to
+    run mostly horizontal/vertical."""
+    if x1 == x2 or y1 == y2:
+        return [(x1, y1), (x2, y2)]
+    if abs(x2 - x1) >= abs(y2 - y1):
+        return [(x1, y1), (x2, y1), (x2, y2)]
+    return [(x1, y1), (x1, y2), (x2, y2)]
+
+
+ROUTE_HOP_PALETTE = ["#FB8520", "#2f6feb", "#2e7d32", "#8e44ad", "#c0392b", "#00897b"]
+
+
+def build_day_route(conn, worksite_id, items):
+    """Ordered map stops + inter-stop hops (mode/points/travel time) for the
+    subset of a day's schedule items (from schedules.get_day_items) that have a
+    facility. Shared by the dedicated day-route map page and the inline "동선"
+    section on the day view — kept here (not in a blueprint) so both
+    blueprints/mapview.py and blueprints/schedules.py can use it without
+    importing from each other."""
+    located = [it for it in items if it["schedule"]["facility_id"]]
+
+    stops = []
+    for idx, it in enumerate(located):
+        b = facility_building(conn, it["schedule"]["facility_id"])
+        stops.append(
+            {
+                "order": idx + 1,
+                "pos_x": b["pos_x"],
+                "pos_y": b["pos_y"],
+                "label": it["facility_label"] or b["name"],
+                "start_time": it["start_time"],
+            }
+        )
+
+    hops = []
+    for i in range(len(located) - 1):
+        a_item, b_item = located[i], located[i + 1]
+        a_fac = a_item["schedule"]["facility_id"]
+        b_fac = b_item["schedule"]["facility_id"]
+        a_b = facility_building(conn, a_fac)
+        b_b = facility_building(conn, b_fac)
+
+        travel, path = travel_minutes_between_facilities(conn, worksite_id, a_fac, b_fac)
+        is_shuttle = bool(path) and any(mode == "shuttle" for _n, mode, _m in path)
+        same_building = a_b["id"] == b_b["id"]
+
+        points = elbow_points(a_b["pos_x"], a_b["pos_y"], b_b["pos_x"], b_b["pos_y"])
+
+        hops.append(
+            {
+                "order": i + 1,
+                "mode": "shuttle" if is_shuttle else ("same" if same_building else "walk"),
+                "color": ROUTE_HOP_PALETTE[i % len(ROUTE_HOP_PALETTE)],
+                "points": " ".join(f"{x},{y}" for x, y in points),
+                "travel_minutes": travel,
+                "from_label": a_item["facility_label"],
+                "to_label": b_item["facility_label"],
+            }
+        )
+
+    return stops, hops

@@ -6,35 +6,16 @@ from sqlalchemy import text
 
 from blueprints.auth import login_required, worksite_required
 from blueprints.schedules import get_day_items
-from constants import FACILITY_TYPE_LABELS
+from constants import DECORATIVE_LANDMARKS, FACILITY_TYPE_LABELS
 from db import engine
-from routing import generate_timetable, next_shuttle_departure, travel_minutes_between_facilities
+from routing import (
+    build_day_route,
+    elbow_points,
+    generate_timetable,
+    next_shuttle_departure,
+)
 
 mapview_bp = Blueprint("mapview", __name__, url_prefix="/map")
-
-# Landmarks that exist on the real, larger campus but are not part of the
-# limited set of buildings Etners staff actually use — shown on the map for
-# scale/realism only, never clickable and never tied to real building rows.
-# (연구동/제2연구센터 used to be here too, but were promoted to real, selectable
-# buildings in seed.py so the schedule facility picker has more choices — see
-# seed.py's ensure_additional_buildings().)
-DECORATIVE_LANDMARKS = [
-    {"name": "본관", "pos_x": 8, "pos_y": 8},
-    {"name": "복지동", "pos_x": 65, "pos_y": 88},
-    {"name": "교육원", "pos_x": 50, "pos_y": 12},
-    {"name": "주차타워", "pos_x": 92, "pos_y": 65},
-]
-
-def _elbow_points(x1, y1, x2, y2):
-    """A right-angle "follows the road grid" bend between two map points instead
-    of a diagonal straight line cutting across buildings — routes along the
-    longer axis first, then turns 90°, echoing how the background's roads run
-    mostly horizontal/vertical."""
-    if x1 == x2 or y1 == y2:
-        return [(x1, y1), (x2, y2)]
-    if abs(x2 - x1) >= abs(y2 - y1):
-        return [(x1, y1), (x2, y1), (x2, y2)]
-    return [(x1, y1), (x1, y2), (x2, y2)]
 
 
 def _shuttle_routes_by_departure_facility(conn, worksite_id):
@@ -217,7 +198,7 @@ def shuttle_map():
     palette = ["#FB8520", "#2f6feb", "#2e7d32", "#8e44ad", "#c0392b", "#00897b"]
     segments = []
     for i, r in enumerate(rows):
-        points = _elbow_points(r["dep_x"], r["dep_y"], r["arr_x"], r["arr_y"])
+        points = elbow_points(r["dep_x"], r["dep_y"], r["arr_x"], r["arr_y"])
         segments.append(
             {
                 "route_name": r["route_name"],
@@ -240,18 +221,6 @@ def shuttle_map():
     )
 
 
-def _facility_building(conn, facility_id):
-    return conn.execute(
-        text(
-            "SELECT b.id, b.name, b.pos_x, b.pos_y FROM facilities fac "
-            "JOIN floors fl ON fl.id = fac.floor_id "
-            "JOIN buildings b ON b.id = fl.building_id "
-            "WHERE fac.id = :id"
-        ),
-        {"id": facility_id},
-    ).mappings().first()
-
-
 @mapview_bp.route("/day-route")
 @login_required
 @worksite_required
@@ -268,48 +237,7 @@ def day_route():
             text("SELECT * FROM buildings WHERE worksite_id = :w ORDER BY name"),
             {"w": _worksite_id()},
         ).mappings().all()
-
-        located = [it for it in items if it["schedule"]["facility_id"]]
-
-        stops = []
-        for idx, it in enumerate(located):
-            b = _facility_building(conn, it["schedule"]["facility_id"])
-            stops.append(
-                {
-                    "order": idx + 1,
-                    "pos_x": b["pos_x"],
-                    "pos_y": b["pos_y"],
-                    "label": it["facility_label"] or b["name"],
-                    "start_time": it["start_time"],
-                }
-            )
-
-        palette = ["#FB8520", "#2f6feb", "#2e7d32", "#8e44ad", "#c0392b", "#00897b"]
-        hops = []
-        for i in range(len(located) - 1):
-            a_item, b_item = located[i], located[i + 1]
-            a_fac = a_item["schedule"]["facility_id"]
-            b_fac = b_item["schedule"]["facility_id"]
-            a_b = _facility_building(conn, a_fac)
-            b_b = _facility_building(conn, b_fac)
-
-            travel, path = travel_minutes_between_facilities(conn, _worksite_id(), a_fac, b_fac)
-            is_shuttle = bool(path) and any(mode == "shuttle" for _n, mode, _m in path)
-            same_building = a_b["id"] == b_b["id"]
-
-            points = _elbow_points(a_b["pos_x"], a_b["pos_y"], b_b["pos_x"], b_b["pos_y"])
-
-            hops.append(
-                {
-                    "order": i + 1,
-                    "mode": "shuttle" if is_shuttle else ("same" if same_building else "walk"),
-                    "color": palette[i % len(palette)],
-                    "points": " ".join(f"{x},{y}" for x, y in points),
-                    "travel_minutes": travel,
-                    "from_label": a_item["facility_label"],
-                    "to_label": b_item["facility_label"],
-                }
-            )
+        stops, hops = build_day_route(conn, _worksite_id(), items)
 
     return render_template(
         "map/day_route.html",

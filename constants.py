@@ -39,3 +39,16 @@ SCHEDULE_CATEGORIES = [
 SCHEDULE_CATEGORY_LABELS = dict(SCHEDULE_CATEGORIES)
 
 DURATION_OPTIONS = [15, 30, 45, 60, 90, 120, 180]
+
+# Landmarks that exist on the real, larger campus but are not part of the
+# limited set of buildings Etners staff actually use — shown on maps for
+# scale/realism only, never clickable and never tied to real building rows.
+# (Lives here, not in blueprints/mapview.py, so blueprints/schedules.py can
+# also use it for the inline "동선" section on the day view without a
+# circular import between the two blueprints.)
+DECORATIVE_LANDMARKS = [
+    {"name": "본관", "pos_x": 8, "pos_y": 8},
+    {"name": "복지동", "pos_x": 65, "pos_y": 88},
+    {"name": "교육원", "pos_x": 50, "pos_y": 12},
+    {"name": "주차타워", "pos_x": 92, "pos_y": 65},
+]
