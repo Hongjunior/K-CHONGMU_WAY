@@ -5,9 +5,23 @@ does graph building and shortest-path arithmetic. Phase 3's route optimizer reus
 these same functions to score candidate schedule orderings.
 """
 import heapq
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import text
+
+
+def kst_now():
+    """Current wall-clock moment in Korea Standard Time (UTC+9), as a naive
+    datetime — matching this codebase's convention of naive datetimes parsed
+    from plain "HH:MM" strings everywhere else. Vercel's serverless runtime is
+    UTC, so plain datetime.now()/date.today() run up to 9 hours behind Korea
+    during KST's early-morning hours (e.g. 08:00 KST is still "yesterday" in
+    UTC) — every "today"/"now" in the app must go through this instead."""
+    return datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=9)
+
+
+def kst_today():
+    return kst_now().date()
 
 
 def build_graph(conn, worksite_id):
@@ -105,7 +119,7 @@ def travel_minutes_between_facilities(conn, worksite_id, facility_id_a, facility
 def next_shuttle_departure(operation_start, operation_end, interval_minutes, now=None):
     """Next scheduled departure time (HH:MM) for a shuttle route, or None if service
     has ended for the day. Plain timetable arithmetic, not AI."""
-    now = now or datetime.now()
+    now = now or kst_now()
     try:
         start_t = datetime.strptime(operation_start, "%H:%M").time()
         end_t = datetime.strptime(operation_end, "%H:%M").time()

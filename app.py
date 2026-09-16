@@ -1,10 +1,10 @@
 from collections import Counter
-from datetime import date as date_cls
 
 from flask import Flask, session
 from sqlalchemy import text
 
 from db import engine, init_db
+from routing import kst_today
 from seed import (
     ensure_additional_buildings,
     ensure_additional_demo_routes,
@@ -37,7 +37,7 @@ def inject_header_status():
     if not session.get("user_id") or not session.get("current_worksite_id"):
         return {}
 
-    today = date_cls.today().isoformat()
+    today = kst_today().isoformat()
     with engine.connect() as conn:
         items = get_day_items(conn, session["user_id"], session["current_worksite_id"], today)
         worksite = conn.execute(

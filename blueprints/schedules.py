@@ -15,7 +15,7 @@ from constants import (
     STATUS_LABELS,
 )
 from db import IS_POSTGRES, engine
-from routing import travel_minutes_between_facilities
+from routing import kst_today, travel_minutes_between_facilities
 
 schedules_bp = Blueprint("schedules", __name__, url_prefix="/schedules")
 
@@ -81,7 +81,7 @@ def _safe_date(date_str):
     try:
         return date_cls.fromisoformat(date_str).isoformat()
     except (ValueError, TypeError):
-        return date_cls.today().isoformat()
+        return kst_today().isoformat()
 
 
 def _parse_hhmm(value):
@@ -245,7 +245,7 @@ def get_day_items(conn, user_id, worksite_id, date_str):
 @login_required
 @worksite_required
 def day_view():
-    date_str = _safe_date(request.args.get("date") or date_cls.today().isoformat())
+    date_str = _safe_date(request.args.get("date") or kst_today().isoformat())
     category_filter = request.args.get("category")
     if category_filter not in SCHEDULE_CATEGORY_LABELS:
         category_filter = None
@@ -267,7 +267,7 @@ def day_view():
         next_date=(cur_date + timedelta(days=1)).isoformat(),
         status_labels=STATUS_LABELS,
         priority_labels=PRIORITY_LABELS,
-        today=date_cls.today().isoformat(),
+        today=kst_today().isoformat(),
         categories=SCHEDULE_CATEGORIES,
         category_labels=SCHEDULE_CATEGORY_LABELS,
         category_counts=category_counts,
@@ -283,7 +283,7 @@ def new_schedule():
         facilities = _facilities_for_current_worksite(conn)
         worksite_map = _worksite_map_for_picker(conn)
 
-    default_date = _safe_date(request.args.get("date") or date_cls.today().isoformat())
+    default_date = _safe_date(request.args.get("date") or kst_today().isoformat())
 
     if request.method == "POST":
         form = request.form
@@ -420,7 +420,7 @@ def edit_schedule(schedule_id):
 @login_required
 @worksite_required
 def delete_schedule(schedule_id):
-    date_str = request.form.get("date") or date_cls.today().isoformat()
+    date_str = request.form.get("date") or kst_today().isoformat()
     with engine.begin() as conn:
         conn.execute(
             text("DELETE FROM schedules WHERE id = :id AND user_id = :u"),
@@ -435,7 +435,7 @@ def delete_schedule(schedule_id):
 @worksite_required
 def update_status(schedule_id):
     new_status = request.form.get("status", "planned")
-    date_str = request.form.get("date") or date_cls.today().isoformat()
+    date_str = request.form.get("date") or kst_today().isoformat()
     if new_status not in STATUS_LABELS:
         new_status = "planned"
 
@@ -629,7 +629,7 @@ def notifications_list():
 @worksite_required
 def api_upcoming():
     """Today's not-done schedules for the reminder popup (static/reminder.js)."""
-    today = date_cls.today().isoformat()
+    today = kst_today().isoformat()
 
     with engine.connect() as conn:
         rows = conn.execute(

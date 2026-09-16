@@ -1,5 +1,5 @@
 from datetime import date as date_cls
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from flask import Blueprint, abort, render_template, request, session
 from sqlalchemy import text
@@ -12,6 +12,8 @@ from routing import (
     build_day_route,
     elbow_points,
     generate_timetable,
+    kst_now,
+    kst_today,
     next_shuttle_departure,
 )
 
@@ -163,7 +165,7 @@ def shuttles():
         )
 
     return render_template(
-        "map/shuttles.html", routes=routes, now_str=datetime.now().strftime("%H:%M")
+        "map/shuttles.html", routes=routes, now_str=kst_now().strftime("%H:%M")
     )
 
 
@@ -228,7 +230,7 @@ def day_route():
     try:
         cur_date = date_cls.fromisoformat(request.args.get("date") or "")
     except ValueError:
-        cur_date = date_cls.today()
+        cur_date = kst_today()
     date_str = cur_date.isoformat()
 
     with engine.connect() as conn:
@@ -248,7 +250,7 @@ def day_route():
         date_str=date_str,
         prev_date=(cur_date - timedelta(days=1)).isoformat(),
         next_date=(cur_date + timedelta(days=1)).isoformat(),
-        today=date_cls.today().isoformat(),
+        today=kst_today().isoformat(),
     )
 
 
