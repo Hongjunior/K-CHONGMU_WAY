@@ -26,11 +26,18 @@
     </nav>
 
     <div class="sidebar-footer">
-        <a class="sidebar-bell" href="{{ url_for('schedules.notifications_list') }}" title="알림">
-            🔔
-            {% if header_unread_count %}<span class="bell-dot"></span>{% endif %}
-        </a>
-        <span class="user-name">{{ session.username }}님 ({{ '관리자' if session.role == 'admin' else '사용자' }})</span>
+        {% if session.role == 'admin' %}
+        <span class="user-name">{{ session.username }}님 (관리자)</span>
+        {% else %}
+        <span class="user-name">
+            {{ session.username }}님
+            {% if session.department or session.job_title %}
+                ({{ session.department }}{% if session.department and session.job_title %} · {% endif %}{{ session.job_title }})
+            {% else %}
+                (사용자)
+            {% endif %}
+        </span>
+        {% endif %}
         <form action="{{ url_for('auth.logout') }}" method="post">
             <button type="submit" class="btn-logout">로그아웃</button>
         </form>
@@ -53,6 +60,10 @@
                 오늘 등록된 일정 없음
             {% endif %}
         </span>
+        <a class="status-bell" href="{{ url_for('schedules.notifications_list') }}" title="알림">
+            🔔
+            {% if header_unread_count %}<span class="bell-dot"></span>{% endif %}
+        </a>
     </header>
     {% endif %}
 

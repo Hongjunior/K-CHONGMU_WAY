@@ -44,13 +44,13 @@
         <input type="hidden" name="facility_id" id="facility_id_input" value="{{ schedule['facility_id'] if schedule and schedule['facility_id'] else '' }}">
 
         <label>중요도</label>
-        <div class="priority-picker">
+        {% set current_priority = schedule['priority'] if schedule else 'normal' %}
+        <div class="priority-stars" id="priority-stars">
+            <input type="hidden" name="priority" id="priority_input" value="{{ current_priority }}">
             {% for value, label in priorities %}
-            <label class="priority-pill priority-pill-{{ value }}">
-                <input type="radio" name="priority" value="{{ value }}" {{ 'checked' if (schedule and schedule['priority'] == value) or (not schedule and value == 'normal') else '' }}>
-                {{ label }}
-            </label>
+            <button type="button" class="star-btn" data-priority="{{ value }}" title="{{ label }}">★</button>
             {% endfor %}
+            <span class="priority-star-label" id="priority-star-label">{{ priority_labels.get(current_priority, current_priority) }}</span>
         </div>
 
         <label>메모</label>
@@ -75,6 +75,32 @@
     }
     checkbox.addEventListener('change', sync);
     sync();
+})();
+</script>
+<script>
+(function () {
+    var order = ['low', 'normal', 'high'];
+    var labels = {{ priority_labels|tojson }};
+    var input = document.getElementById('priority_input');
+    var labelEl = document.getElementById('priority-star-label');
+    var stars = document.querySelectorAll('#priority-stars .star-btn');
+
+    function render() {
+        var idx = order.indexOf(input.value);
+        stars.forEach(function (btn, i) {
+            btn.classList.toggle('filled', i <= idx);
+        });
+        labelEl.textContent = labels[input.value] || '';
+    }
+
+    stars.forEach(function (btn, i) {
+        btn.addEventListener('click', function () {
+            input.value = order[i];
+            render();
+        });
+    });
+
+    render();
 })();
 </script>
 

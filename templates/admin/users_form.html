@@ -17,6 +17,12 @@
             {% endfor %}
         </select>
 
+        <label>소속 (선택)</label>
+        <input type="text" name="department" placeholder="예: 영업팀">
+
+        <label>직책 (선택)</label>
+        <input type="text" name="job_title" placeholder="예: 대리">
+
         <div class="form-actions">
             <button type="submit">추가</button>
             <a href="{{ url_for('admin.users_list') }}" class="btn-cancel">취소</a>

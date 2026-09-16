@@ -39,6 +39,17 @@ JSON_TYPE = "JSONB" if IS_POSTGRES else "TEXT"
 NULLABLE_TS = "TIMESTAMP" if IS_POSTGRES else "TEXT"
 
 
+def _ensure_column(conn, table, column, coltype):
+    """Add a column to an already-existing table if it's missing (idempotent),
+    so already-deployed databases pick up new fields without a full migration."""
+    if IS_POSTGRES:
+        conn.execute(text(f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS {column} {coltype}"))
+    else:
+        existing = {row[1] for row in conn.execute(text(f"PRAGMA table_info({table})"))}
+        if column not in existing:
+            conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {coltype}"))
+
+
 def init_db():
     with engine.begin() as conn:
         conn.execute(text(f"""
@@ -57,10 +68,14 @@ def init_db():
                 username TEXT NOT NULL UNIQUE,
                 password_hash TEXT NOT NULL,
                 role TEXT NOT NULL DEFAULT 'user',
+                department TEXT,
+                job_title TEXT,
                 current_worksite_id INTEGER REFERENCES worksites(id),
                 created_at {TS}
             )
         """))
+        _ensure_column(conn, "users", "department", "TEXT")
+        _ensure_column(conn, "users", "job_title", "TEXT")
 
         conn.execute(text(f"""
             CREATE TABLE IF NOT EXISTS buildings (

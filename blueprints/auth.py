@@ -48,6 +48,8 @@ def register():
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
         confirm = request.form.get("confirm", "")
+        department = request.form.get("department", "").strip() or None
+        job_title = request.form.get("job_title", "").strip() or None
 
         if not username or not password:
             flash("아이디와 비밀번호를 입력해주세요.", "error")
@@ -67,8 +69,11 @@ def register():
             # Self-registration always creates a regular user account.
             # Admin accounts are granted by an existing admin via /admin/users.
             conn.execute(
-                text("INSERT INTO users (username, password_hash, role) VALUES (:u, :p, 'user')"),
-                {"u": username, "p": generate_password_hash(password)},
+                text(
+                    "INSERT INTO users (username, password_hash, role, department, job_title) "
+                    "VALUES (:u, :p, 'user', :d, :j)"
+                ),
+                {"u": username, "p": generate_password_hash(password), "d": department, "j": job_title},
             )
 
         flash("회원가입이 완료되었습니다. 로그인해주세요.", "success")
@@ -95,6 +100,8 @@ def login():
         session["user_id"] = user["id"]
         session["username"] = user["username"]
         session["role"] = user["role"]
+        session["department"] = user["department"]
+        session["job_title"] = user["job_title"]
         session["current_worksite_id"] = user["current_worksite_id"]
 
         flash(f"{user['username']}님, 환영합니다.", "success")

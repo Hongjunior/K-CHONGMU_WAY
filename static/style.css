@@ -46,9 +46,9 @@ a {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 10px;
+    gap: 18px;
     font-weight: 800;
-    font-size: 20px;
+    font-size: 26px;
     text-decoration: none;
     color: #fff;
     margin-bottom: 28px;
@@ -68,10 +68,10 @@ a {
 }
 
 .sidenav a {
-    color: rgba(255,255,255,0.88);
+    color: rgba(255,255,255,0.92);
     text-decoration: none;
-    font-size: 16px;
-    font-weight: 600;
+    font-size: 18px;
+    font-weight: 700;
     padding: 10px 12px;
     border-radius: 8px;
 }
@@ -93,25 +93,6 @@ a {
     gap: 10px;
     padding-top: 16px;
     border-top: 1px solid rgba(255,255,255,0.25);
-}
-
-.sidebar-bell {
-    position: relative;
-    align-self: flex-start;
-    font-size: 20px;
-    text-decoration: none;
-    line-height: 1;
-}
-
-.bell-dot {
-    position: absolute;
-    top: -2px;
-    right: -4px;
-    width: 9px;
-    height: 9px;
-    border-radius: 50%;
-    background: #e74c3c;
-    border: 1.5px solid var(--color-primary);
 }
 
 .user-name {
@@ -164,7 +145,37 @@ a {
 .status-summary {
     color: var(--color-text-muted);
     font-weight: 500;
+}
+
+.status-bell {
+    position: relative;
     margin-left: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--color-primary-light);
+    font-size: 22px;
+    text-decoration: none;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.status-bell:hover {
+    background: var(--color-primary);
+}
+
+.bell-dot {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: #e74c3c;
+    border: 2px solid var(--color-surface);
 }
 
 /* ---------- Layout ---------- */
@@ -1056,42 +1067,30 @@ a {
     color: #c0392b;
 }
 
-.priority-picker {
+.priority-stars {
     display: flex;
-    gap: 8px;
+    align-items: center;
+    gap: 4px;
 }
 
-.priority-pill {
-    flex: 1;
-    text-align: center;
-    padding: 8px 0;
-    border-radius: 8px;
-    border: 2px solid var(--color-border);
+.star-btn {
+    background: none;
+    border: none;
     cursor: pointer;
+    font-size: 30px;
+    line-height: 1;
+    padding: 0;
+    color: var(--color-border);
+}
+
+.star-btn.filled {
+    color: var(--color-primary);
+}
+
+.priority-star-label {
+    margin-left: 8px;
     font-size: 13px;
     color: var(--color-text-muted);
-}
-
-.priority-pill input {
-    display: none;
-}
-
-.priority-pill-low:has(input:checked) {
-    background: #e8f0fe;
-    border-color: #2f6feb;
-    color: #2f6feb;
-}
-
-.priority-pill-normal:has(input:checked) {
-    background: var(--color-primary-light);
-    border-color: var(--color-primary);
-    color: var(--color-primary-dark);
-}
-
-.priority-pill-high:has(input:checked) {
-    background: #fdeaea;
-    border-color: #c0392b;
-    color: #c0392b;
 }
 
 /* ---------- Shuttle info ---------- */

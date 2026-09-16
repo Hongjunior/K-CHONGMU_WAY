@@ -72,6 +72,8 @@ def users_new():
         role = request.form.get("role", "user")
         if role not in ROLE_LABELS:
             role = "user"
+        department = request.form.get("department", "").strip() or None
+        job_title = request.form.get("job_title", "").strip() or None
 
         if not username or not password:
             flash("아이디와 비밀번호를 입력해주세요.", "error")
@@ -86,14 +88,48 @@ def users_new():
                 return redirect(url_for("admin.users_new"))
 
             conn.execute(
-                text("INSERT INTO users (username, password_hash, role) VALUES (:u, :p, :r)"),
-                {"u": username, "p": generate_password_hash(password), "r": role},
+                text(
+                    "INSERT INTO users (username, password_hash, role, department, job_title) "
+                    "VALUES (:u, :p, :r, :d, :j)"
+                ),
+                {
+                    "u": username,
+                    "p": generate_password_hash(password),
+                    "r": role,
+                    "d": department,
+                    "j": job_title,
+                },
             )
 
         flash("사용자가 추가되었습니다.", "success")
         return redirect(url_for("admin.users_list"))
 
     return render_template("admin/users_form.html", role_labels=ROLE_LABELS)
+
+
+@admin_bp.route("/users/<int:user_id>/edit", methods=["GET", "POST"])
+@admin_required
+def users_edit(user_id):
+    with engine.connect() as conn:
+        user = conn.execute(
+            text("SELECT * FROM users WHERE id = :id"), {"id": user_id}
+        ).mappings().first()
+    if not user:
+        flash("사용자를 찾을 수 없습니다.", "error")
+        return redirect(url_for("admin.users_list"))
+
+    if request.method == "POST":
+        department = request.form.get("department", "").strip() or None
+        job_title = request.form.get("job_title", "").strip() or None
+        with engine.begin() as conn:
+            conn.execute(
+                text("UPDATE users SET department=:d, job_title=:j WHERE id=:id"),
+                {"d": department, "j": job_title, "id": user_id},
+            )
+        flash("사용자 정보가 수정되었습니다.", "success")
+        return redirect(url_for("admin.users_list"))
+
+    return render_template("admin/users_edit.html", user=user)
 
 
 @admin_bp.route("/users/<int:user_id>/toggle-role", methods=["POST"])

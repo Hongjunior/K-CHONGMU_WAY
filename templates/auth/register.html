@@ -13,6 +13,12 @@
         <label>비밀번호 확인</label>
         <input type="password" name="confirm" required autocomplete="new-password">
 
+        <label>소속 (선택)</label>
+        <input type="text" name="department" placeholder="예: 영업팀">
+
+        <label>직책 (선택)</label>
+        <input type="text" name="job_title" placeholder="예: 대리">
+
         <button type="submit">가입하기</button>
     </form>
     <p class="auth-switch">이미 계정이 있으신가요? <a href="{{ url_for('auth.login') }}">로그인</a></p>
