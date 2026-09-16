@@ -117,8 +117,12 @@ def travel_minutes_between_facilities(conn, worksite_id, facility_id_a, facility
 
 
 def next_shuttle_departure(operation_start, operation_end, interval_minutes, now=None):
-    """Next scheduled departure time (HH:MM) for a shuttle route, or None if service
-    has ended for the day. Plain timetable arithmetic, not AI."""
+    """Next scheduled departure time (HH:MM) for a shuttle route. If today's
+    service window hasn't started yet, or has already ended, this rolls over to
+    tomorrow's first departure (operation_start) instead of returning None —
+    like a real transit app, there's always an actionable "다음 셔틀" time to
+    show rather than a dead "오늘 운행 종료" state. Plain timetable arithmetic,
+    not AI."""
     now = now or kst_now()
     try:
         start_t = datetime.strptime(operation_start, "%H:%M").time()
@@ -126,10 +130,8 @@ def next_shuttle_departure(operation_start, operation_end, interval_minutes, now
     except (ValueError, TypeError):
         return None
 
-    if now.time() < start_t:
+    if now.time() < start_t or now.time() > end_t:
         return operation_start
-    if now.time() > end_t:
-        return None
 
     start_dt = datetime.combine(now.date(), start_t)
     end_dt = datetime.combine(now.date(), end_t)
@@ -138,7 +140,7 @@ def next_shuttle_departure(operation_start, operation_end, interval_minutes, now
     next_dt = start_dt + timedelta(minutes=departures_passed * interval_minutes)
 
     if next_dt > end_dt:
-        return None
+        return operation_start
     return next_dt.strftime("%H:%M")
 
 

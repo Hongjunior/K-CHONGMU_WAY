@@ -30,7 +30,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 html +=
                     "<li><strong>" + r.route_name + "</strong> → " + r.arrival +
                     "<br>운행 " + r.operation + " · 배차간격 " + r.interval + "분 · 이동시간 " + r.travel_minutes + "분" +
-                    (r.next_departure ? ("<br>다음 셔틀: <strong>" + r.next_departure + "</strong>") : "<br>금일 운행 종료") +
+                    "<br>다음 셔틀: <strong>" + r.next_departure + "</strong>" +
                     "</li>";
             });
             html += "</ul>";

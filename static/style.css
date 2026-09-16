@@ -1161,10 +1161,6 @@ a {
     font-weight: 600;
 }
 
-.shuttle-info-next.ended {
-    color: var(--color-text-muted);
-}
-
 .shuttle-route-list {
     list-style: none;
     margin: 8px 0 0;

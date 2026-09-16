@@ -16,12 +16,8 @@
                 운행 {{ r.operation_start }}~{{ r.operation_end }} · 배차간격 {{ r.interval_minutes }}분
                 · 이동 {{ r.travel_minutes }}분 (평균 대기 {{ r.waiting_minutes }}분)
             </div>
-            <div class="shuttle-info-next {{ 'ended' if not r.next_departure else '' }}">
-                {% if r.next_departure %}
+            <div class="shuttle-info-next">
                 다음 셔틀: <strong>{{ r.next_departure }}</strong>
-                {% else %}
-                금일 운행 종료
-                {% endif %}
             </div>
 
             <details class="timetable-details">
