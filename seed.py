@@ -231,6 +231,25 @@ def seed_demo_data(engine):
             },
         )
 
+        # A cross-building walk edge too — otherwise every inter-building hop in the
+        # demo data goes through a shuttle route, so the day-route map's "도보 구간
+        # (점선)" style never actually has an example to show. B동과 연구동 사이에
+        # 셔틀 없이 걸어서 오갈 수 있는 연결 통로가 있다고 가정.
+        conn.execute(
+            text(
+                "INSERT INTO move_edges "
+                "(worksite_id, from_node_type, from_node_id, to_node_type, to_node_id, "
+                " mode, minutes, bidirectional) "
+                "VALUES (:w, 'facility', :f, 'facility', :t, 'walk', 10, :bd)"
+            ),
+            {
+                "w": worksite_id,
+                "f": facility_ids[("B동", "현장점검 장소")],
+                "t": facility_ids[("연구동", "세미나실")],
+                "bd": True,
+            },
+        )
+
         # Additional worksites the admin can populate later (사업장 전환용, 아직 건물/시설 데이터 없음).
         for name, desc in [
             ("SK D&D (성남)", None),
@@ -385,6 +404,42 @@ def fix_facility_names(engine):
                 ),
                 {"oh": open_h, "ch": close_h, "n": name, "w": worksite_id, "b": building},
             )
+
+
+def ensure_cross_building_walk_edge(engine):
+    """Idempotent top-up: adds the B동<->연구동 walk-only connection to a worksite
+    that was seeded before it existed, so the day-route map has a real example of
+    a 도보 (walk) hop instead of every inter-building hop being a shuttle."""
+    with engine.begin() as conn:
+        worksite_id = _demo_worksite_id(conn)
+        if not worksite_id:
+            return
+
+        b_id = _facility_id_by_building(conn, worksite_id, "B동", "현장점검 장소")
+        r_id = _facility_id_by_building(conn, worksite_id, "연구동", "세미나실")
+        if not b_id or not r_id:
+            return
+
+        existing = conn.execute(
+            text(
+                "SELECT id FROM move_edges WHERE worksite_id = :w AND mode = 'walk' "
+                "AND ((from_node_id = :b AND to_node_id = :r) OR (from_node_id = :r AND to_node_id = :b)) "
+                "AND from_node_type = 'facility' AND to_node_type = 'facility'"
+            ),
+            {"w": worksite_id, "b": b_id, "r": r_id},
+        ).scalar()
+        if existing:
+            return
+
+        conn.execute(
+            text(
+                "INSERT INTO move_edges "
+                "(worksite_id, from_node_type, from_node_id, to_node_type, to_node_id, "
+                " mode, minutes, bidirectional) "
+                "VALUES (:w, 'facility', :f, 'facility', :t, 'walk', 10, :bd)"
+            ),
+            {"w": worksite_id, "f": b_id, "t": r_id, "bd": True},
+        )
 
 
 def ensure_additional_buildings(engine):

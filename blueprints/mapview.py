@@ -25,12 +25,16 @@ DECORATIVE_LANDMARKS = [
     {"name": "주차타워", "pos_x": 92, "pos_y": 65},
 ]
 
-# Extra polyline via-points (map display only, not travel-time data) so some
-# shuttle routes visually bend through the decorative landmarks above instead
-# of every route being a flat straight line.
-ROUTE_VIA_POINTS = {
-    "A동-C동 급행 셔틀": [(50, 14)],
-}
+def _elbow_points(x1, y1, x2, y2):
+    """A right-angle "follows the road grid" bend between two map points instead
+    of a diagonal straight line cutting across buildings — routes along the
+    longer axis first, then turns 90°, echoing how the background's roads run
+    mostly horizontal/vertical."""
+    if x1 == x2 or y1 == y2:
+        return [(x1, y1), (x2, y2)]
+    if abs(x2 - x1) >= abs(y2 - y1):
+        return [(x1, y1), (x2, y1), (x2, y2)]
+    return [(x1, y1), (x1, y2), (x2, y2)]
 
 
 def _shuttle_routes_by_departure_facility(conn, worksite_id):
@@ -213,8 +217,7 @@ def shuttle_map():
     palette = ["#FB8520", "#2f6feb", "#2e7d32", "#8e44ad", "#c0392b", "#00897b"]
     segments = []
     for i, r in enumerate(rows):
-        via = ROUTE_VIA_POINTS.get(r["route_name"], [])
-        points = [(r["dep_x"], r["dep_y"]), *via, (r["arr_x"], r["arr_y"])]
+        points = _elbow_points(r["dep_x"], r["dep_y"], r["arr_x"], r["arr_y"])
         segments.append(
             {
                 "route_name": r["route_name"],
@@ -247,22 +250,6 @@ def _facility_building(conn, facility_id):
         ),
         {"id": facility_id},
     ).mappings().first()
-
-
-def _shuttle_route_name_for(conn, worksite_id, dep_building_id, arr_building_id):
-    return conn.execute(
-        text(
-            "SELECT sr.route_name FROM shuttle_routes sr "
-            "JOIN facilities fd ON fd.id = sr.departure_facility_id "
-            "JOIN floors fld ON fld.id = fd.floor_id "
-            "JOIN facilities fa ON fa.id = sr.arrival_facility_id "
-            "JOIN floors fla ON fla.id = fa.floor_id "
-            "WHERE sr.worksite_id = :w AND sr.active "
-            "AND fld.building_id = :dep AND fla.building_id = :arr "
-            "LIMIT 1"
-        ),
-        {"w": worksite_id, "dep": dep_building_id, "arr": arr_building_id},
-    ).scalar()
 
 
 @mapview_bp.route("/day-route")
@@ -310,11 +297,7 @@ def day_route():
             is_shuttle = bool(path) and any(mode == "shuttle" for _n, mode, _m in path)
             same_building = a_b["id"] == b_b["id"]
 
-            points = [(a_b["pos_x"], a_b["pos_y"])]
-            if is_shuttle:
-                route_name = _shuttle_route_name_for(conn, _worksite_id(), a_b["id"], b_b["id"])
-                points.extend(ROUTE_VIA_POINTS.get(route_name, []))
-            points.append((b_b["pos_x"], b_b["pos_y"]))
+            points = _elbow_points(a_b["pos_x"], a_b["pos_y"], b_b["pos_x"], b_b["pos_y"])
 
             hops.append(
                 {
