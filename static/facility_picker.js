@@ -12,10 +12,16 @@ document.addEventListener("DOMContentLoaded", function () {
     var floorsEl = document.getElementById("fp-floors");
     var canvasEl = document.getElementById("fp-canvas");
     var selectedEl = document.getElementById("fp-selected");
+    var hoursEl = document.getElementById("fp-hours");
     var clearBtn = document.getElementById("fp-clear");
 
     if (!dataEl || !input || !buildingsEl || !floorsEl || !canvasEl) {
         return;
+    }
+
+    function formatHours(fac) {
+        if (!fac.operating_hours_open || !fac.operating_hours_close) return "운영시간: 상시";
+        return "운영시간: " + fac.operating_hours_open + " ~ " + fac.operating_hours_close;
     }
 
     var worksiteMap = [];
@@ -138,6 +144,7 @@ document.addEventListener("DOMContentLoaded", function () {
             block.addEventListener("click", function () {
                 input.value = fac.id;
                 selectedEl.textContent = "선택됨: " + fac.name;
+                if (hoursEl) hoursEl.textContent = formatHours(fac);
                 renderCanvas();
             });
             canvasEl.appendChild(block);
@@ -148,6 +155,7 @@ document.addEventListener("DOMContentLoaded", function () {
         clearBtn.addEventListener("click", function () {
             input.value = "";
             selectedEl.textContent = "선택된 장소 없음";
+            if (hoursEl) hoursEl.textContent = "";
             renderCanvas();
         });
     }
@@ -157,6 +165,7 @@ document.addEventListener("DOMContentLoaded", function () {
         currentBuildingId = existing.building.id;
         currentFloorId = existing.floor.id;
         selectedEl.textContent = "선택됨: " + existing.facility.name;
+        if (hoursEl) hoursEl.textContent = formatHours(existing.facility);
     } else if (worksiteMap.length) {
         currentBuildingId = worksiteMap[0].id;
         currentFloorId = worksiteMap[0].floors.length ? worksiteMap[0].floors[0].id : null;

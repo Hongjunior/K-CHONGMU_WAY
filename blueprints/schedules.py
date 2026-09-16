@@ -7,7 +7,6 @@ from sqlalchemy import bindparam, text
 
 from blueprints.auth import login_required, worksite_required
 from constants import (
-    DECORATIVE_LANDMARKS,
     DURATION_OPTIONS,
     PRIORITIES,
     PRIORITY_LABELS,
@@ -16,7 +15,7 @@ from constants import (
     STATUS_LABELS,
 )
 from db import IS_POSTGRES, engine
-from routing import build_day_route, travel_minutes_between_facilities
+from routing import travel_minutes_between_facilities
 
 schedules_bp = Blueprint("schedules", __name__, url_prefix="/schedules")
 
@@ -65,7 +64,8 @@ def _worksite_map_for_picker(conn):
         for f in floors:
             facs = conn.execute(
                 text(
-                    "SELECT id, name, facility_type, pos_x, pos_y, shape_w, shape_h "
+                    "SELECT id, name, facility_type, pos_x, pos_y, shape_w, shape_h, "
+                    " operating_hours_open, operating_hours_close "
                     "FROM facilities WHERE floor_id = :f AND active ORDER BY name"
                 ),
                 {"f": f["id"]},
@@ -252,12 +252,6 @@ def day_view():
 
     with engine.connect() as conn:
         items = get_day_items(conn, _user_id(), _worksite_id(), date_str)
-        buildings = conn.execute(
-            text("SELECT * FROM buildings WHERE worksite_id = :w ORDER BY name"),
-            {"w": _worksite_id()},
-        ).mappings().all()
-        # Always the whole day's route, regardless of the category pill filter below.
-        stops, hops = build_day_route(conn, _worksite_id(), items)
 
     category_counts = Counter((item["schedule"]["work_type"] or "etc") for item in items)
 
@@ -278,10 +272,6 @@ def day_view():
         category_labels=SCHEDULE_CATEGORY_LABELS,
         category_counts=category_counts,
         category_filter=category_filter,
-        buildings=buildings,
-        decorative_landmarks=DECORATIVE_LANDMARKS,
-        stops=stops,
-        hops=hops,
     )
 
 

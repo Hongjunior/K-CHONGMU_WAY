@@ -22,7 +22,8 @@
 
     <nav class="sidenav">
         <a href="{{ url_for('schedules.day_view') }}" class="{{ 'active' if request.endpoint in ('schedules.day_view',) else '' }}">일정</a>
-        <a href="{{ url_for('mapview.overview') }}" class="{{ 'active' if request.endpoint in ('mapview.overview', 'mapview.floor_view', 'mapview.search', 'mapview.day_route') else '' }}">지도</a>
+        <a href="{{ url_for('mapview.day_route') }}" class="{{ 'active' if request.endpoint == 'mapview.day_route' else '' }}">동선</a>
+        <a href="{{ url_for('mapview.overview') }}" class="{{ 'active' if request.endpoint in ('mapview.overview', 'mapview.floor_view', 'mapview.search') else '' }}">지도</a>
         <a href="{{ url_for('mapview.shuttles') }}" class="{{ 'active' if request.endpoint in ('mapview.shuttles', 'mapview.shuttle_map') else '' }}">셔틀</a>
         {% if session.role == 'admin' %}
         <a href="{{ url_for('admin.dashboard') }}" class="{{ 'active' if request.blueprint == 'admin' else '' }}">관리자</a>
