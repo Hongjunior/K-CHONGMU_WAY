@@ -34,6 +34,10 @@
     <div class="sidebar-footer">
         {% if session.role == 'admin' %}
         <span class="user-name">{{ session.username }}님 (관리자)</span>
+        {% elif session.display_name %}
+        <span class="user-name">
+            {{ session.department }} {{ session.display_name }}님{% if session.job_title %} ({{ session.job_title }}){% endif %}
+        </span>
         {% else %}
         <span class="user-name">
             {{ session.username }}님

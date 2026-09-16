@@ -12,7 +12,7 @@
     <table class="data-table">
         <thead>
             <tr>
-                <th>ID</th><th>아이디</th><th>권한</th><th>소속</th><th>직책</th><th>현재 사업장</th><th>가입일</th><th></th>
+                <th>ID</th><th>아이디</th><th>이름</th><th>권한</th><th>소속</th><th>직책</th><th>현재 사업장</th><th>가입일</th><th></th>
             </tr>
         </thead>
         <tbody>
@@ -20,6 +20,7 @@
             <tr>
                 <td>{{ u['id'] }}</td>
                 <td>{{ u['username'] }}</td>
+                <td>{{ u['display_name'] or '-' }}</td>
                 <td><span class="badge badge-{{ u['role'] }}">{{ role_labels[u['role']] }}</span></td>
                 <td>{{ u['department'] or '-' }}</td>
                 <td>{{ u['job_title'] or '-' }}</td>
@@ -39,7 +40,7 @@
                 </td>
             </tr>
         {% else %}
-            <tr><td colspan="8" class="empty-state">등록된 사용자가 없습니다.</td></tr>
+            <tr><td colspan="9" class="empty-state">등록된 사용자가 없습니다.</td></tr>
         {% endfor %}
         </tbody>
     </table>

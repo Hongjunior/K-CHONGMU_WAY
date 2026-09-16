@@ -50,6 +50,7 @@ def register():
         confirm = request.form.get("confirm", "")
         department = request.form.get("department", "").strip() or None
         job_title = request.form.get("job_title", "").strip() or None
+        display_name = request.form.get("display_name", "").strip() or None
 
         if not username or not password:
             flash("아이디와 비밀번호를 입력해주세요.", "error")
@@ -70,10 +71,16 @@ def register():
             # Admin accounts are granted by an existing admin via /admin/users.
             conn.execute(
                 text(
-                    "INSERT INTO users (username, password_hash, role, department, job_title) "
-                    "VALUES (:u, :p, 'user', :d, :j)"
+                    "INSERT INTO users (username, password_hash, role, department, job_title, display_name) "
+                    "VALUES (:u, :p, 'user', :d, :j, :n)"
                 ),
-                {"u": username, "p": generate_password_hash(password), "d": department, "j": job_title},
+                {
+                    "u": username,
+                    "p": generate_password_hash(password),
+                    "d": department,
+                    "j": job_title,
+                    "n": display_name,
+                },
             )
 
         flash("회원가입이 완료되었습니다. 로그인해주세요.", "success")
@@ -102,6 +109,7 @@ def login():
         session["role"] = user["role"]
         session["department"] = user["department"]
         session["job_title"] = user["job_title"]
+        session["display_name"] = user["display_name"]
         session["current_worksite_id"] = user["current_worksite_id"]
 
         flash(f"{user['username']}님, 환영합니다.", "success")

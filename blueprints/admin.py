@@ -74,6 +74,7 @@ def users_new():
             role = "user"
         department = request.form.get("department", "").strip() or None
         job_title = request.form.get("job_title", "").strip() or None
+        display_name = request.form.get("display_name", "").strip() or None
 
         if not username or not password:
             flash("아이디와 비밀번호를 입력해주세요.", "error")
@@ -89,8 +90,8 @@ def users_new():
 
             conn.execute(
                 text(
-                    "INSERT INTO users (username, password_hash, role, department, job_title) "
-                    "VALUES (:u, :p, :r, :d, :j)"
+                    "INSERT INTO users (username, password_hash, role, department, job_title, display_name) "
+                    "VALUES (:u, :p, :r, :d, :j, :n)"
                 ),
                 {
                     "u": username,
@@ -98,6 +99,7 @@ def users_new():
                     "r": role,
                     "d": department,
                     "j": job_title,
+                    "n": display_name,
                 },
             )
 
@@ -121,10 +123,11 @@ def users_edit(user_id):
     if request.method == "POST":
         department = request.form.get("department", "").strip() or None
         job_title = request.form.get("job_title", "").strip() or None
+        display_name = request.form.get("display_name", "").strip() or None
         with engine.begin() as conn:
             conn.execute(
-                text("UPDATE users SET department=:d, job_title=:j WHERE id=:id"),
-                {"d": department, "j": job_title, "id": user_id},
+                text("UPDATE users SET department=:d, job_title=:j, display_name=:n WHERE id=:id"),
+                {"d": department, "j": job_title, "n": display_name, "id": user_id},
             )
         flash("사용자 정보가 수정되었습니다.", "success")
         return redirect(url_for("admin.users_list"))

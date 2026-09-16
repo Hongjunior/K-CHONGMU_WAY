@@ -9,6 +9,7 @@ from seed import (
     ensure_additional_buildings,
     ensure_additional_demo_routes,
     ensure_cross_building_walk_edge,
+    ensure_demo_users,
     fix_facility_names,
     fix_worksite_names,
     seed_demo_data,
@@ -77,6 +78,7 @@ fix_worksite_names(engine)
 ensure_additional_demo_routes(engine)
 ensure_additional_buildings(engine)
 ensure_cross_building_walk_edge(engine)
+ensure_demo_users(engine)
 
 if __name__ == "__main__":
     app.run(debug=True)

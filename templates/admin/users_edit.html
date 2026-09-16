@@ -4,6 +4,9 @@
 <section class="page-section">
     <h2>{{ user['username'] }} 정보 수정</h2>
     <form action="{{ url_for('admin.users_edit', user_id=user['id']) }}" method="post" class="entity-form">
+        <label>이름</label>
+        <input type="text" name="display_name" value="{{ user['display_name'] or '' }}" placeholder="예: 홍길동">
+
         <label>소속</label>
         <input type="text" name="department" value="{{ user['department'] or '' }}" placeholder="예: 영업팀">
 

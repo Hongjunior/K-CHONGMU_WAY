@@ -9,21 +9,24 @@
 
     <div class="notif-list">
         {% for n in notifications %}
-        <div class="notif-item {{ 'new' if n.is_new else 'read' }}">
-            <div class="notif-message">{{ n.message }}</div>
-            <div class="notif-meta">{{ n.created_at }}</div>
-            {% if n.type == 'share' and n.share_status == 'pending' %}
-            <div class="notif-actions">
-                <form action="{{ url_for('schedules.accept_share', share_id=n.related_share_id) }}" method="post">
-                    <button type="submit" class="btn-primary">추가</button>
-                </form>
-                <form action="{{ url_for('schedules.decline_share', share_id=n.related_share_id) }}" method="post">
-                    <button type="submit" class="btn-delete">삭제</button>
-                </form>
+        <div class="notif-item {{ 'read' if not n.is_new else 'new' }}">
+            <div class="notif-icon">{{ '📤' if n.type == 'share' else '🔔' }}</div>
+            <div class="notif-body">
+                <div class="notif-message">{{ n.message }}</div>
+                <div class="notif-meta">{{ n.created_at }}</div>
+                {% if n.type == 'share' and n.share_status == 'pending' %}
+                <div class="notif-actions">
+                    <form action="{{ url_for('schedules.accept_share', share_id=n.related_share_id) }}" method="post">
+                        <button type="submit" class="notif-btn notif-btn-accept">+ 추가</button>
+                    </form>
+                    <form action="{{ url_for('schedules.decline_share', share_id=n.related_share_id) }}" method="post">
+                        <button type="submit" class="notif-btn notif-btn-decline">✕ 삭제</button>
+                    </form>
+                </div>
+                {% elif n.type == 'share' %}
+                <div class="notif-status-tag">{{ '✓ 이미 추가됨' if n.share_status == 'accepted' else '처리됨' }}</div>
+                {% endif %}
             </div>
-            {% elif n.type == 'share' %}
-            <div class="notif-meta">{{ '이미 추가됨' if n.share_status == 'accepted' else '처리됨' }}</div>
-            {% endif %}
         </div>
         {% else %}
         <p class="empty-state">알림이 없습니다.</p>

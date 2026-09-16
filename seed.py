@@ -1,5 +1,22 @@
+import random
+
 from sqlalchemy import text
 from werkzeug.security import generate_password_hash
+
+# Used only to give demo user accounts a plausible-looking profile (random name/
+# department/job title) instead of a bare login id — not shown to real users,
+# who set their own via the register form or admin's user-edit screen.
+DEMO_NAME_POOL = ["김민준", "이서연", "박도윤", "최지우", "정하은", "강서준", "조은우", "윤지호"]
+DEMO_DEPARTMENT_POOL = ["영업팀", "개발팀", "인사팀", "총무팀", "마케팅팀", "재무팀"]
+DEMO_JOB_TITLE_POOL = ["사원", "대리", "과장", "차장", "팀장"]
+
+
+def _random_profile():
+    return {
+        "d": random.choice(DEMO_DEPARTMENT_POOL),
+        "j": random.choice(DEMO_JOB_TITLE_POOL),
+        "n": random.choice(DEMO_NAME_POOL),
+    }
 
 
 def seed_demo_data(engine):
@@ -15,12 +32,22 @@ def seed_demo_data(engine):
 
         conn.execute(
             text(
-                "INSERT INTO users (username, password_hash, role, current_worksite_id) "
-                "VALUES (:u, :p, :r, :w)"
+                "INSERT INTO users "
+                "(username, password_hash, role, department, job_title, display_name, current_worksite_id) "
+                "VALUES (:u, :p, :r, :d, :j, :n, :w)"
             ),
             [
-                {"u": "admin", "p": generate_password_hash("admin1234"), "r": "admin", "w": worksite_id},
-                {"u": "user1", "p": generate_password_hash("user1234"), "r": "user", "w": worksite_id},
+                {
+                    "u": "admin", "p": generate_password_hash("admin1234"), "r": "admin",
+                    "d": None, "j": None, "n": None, "w": worksite_id,
+                },
+                *[
+                    {
+                        "u": username, "p": generate_password_hash("user1234"), "r": "user",
+                        "w": worksite_id, **_random_profile(),
+                    }
+                    for username in ("user1", "user2", "user3")
+                ],
             ],
         )
 
@@ -269,6 +296,45 @@ def fix_worksite_names(engine):
             text("UPDATE worksites SET name = :new WHERE name = :old"),
             {"new": "SK D&D (성남)", "old": "SK하이닉스 D&D (성남)"},
         )
+
+
+def ensure_demo_users(engine):
+    """Idempotent top-up: backfill user1's department/job_title/display_name if an
+    older seed left them blank, and add user2/user3 demo accounts so there's more
+    than one real counterpart to test schedule-sharing with."""
+    with engine.begin() as conn:
+        worksite_id = _demo_worksite_id(conn)
+        if not worksite_id:
+            return
+
+        row = conn.execute(
+            text("SELECT id, display_name FROM users WHERE username = :u"), {"u": "user1"}
+        ).mappings().first()
+        if row and not row["display_name"]:
+            conn.execute(
+                text("UPDATE users SET department=:d, job_title=:j, display_name=:n WHERE id=:id"),
+                {**_random_profile(), "id": row["id"]},
+            )
+
+        for username in ("user2", "user3"):
+            existing = conn.execute(
+                text("SELECT id FROM users WHERE username = :u"), {"u": username}
+            ).scalar()
+            if existing:
+                continue
+            conn.execute(
+                text(
+                    "INSERT INTO users "
+                    "(username, password_hash, role, department, job_title, display_name, current_worksite_id) "
+                    "VALUES (:u, :p, 'user', :d, :j, :n, :w)"
+                ),
+                {
+                    "u": username,
+                    "p": generate_password_hash("user1234"),
+                    "w": worksite_id,
+                    **_random_profile(),
+                },
+            )
 
 
 def _demo_worksite_id(conn):

@@ -4,11 +4,7 @@
 <section class="page-section">
     <div class="page-header">
         <h2>셔틀 노선 안내</h2>
-        <div>
-            <a class="btn-link" href="{{ url_for('mapview.shuttle_map') }}">전체 동선 보기 →</a>
-            &nbsp;|&nbsp;
-            <a class="btn-link" href="{{ url_for('mapview.overview') }}">← 사업장 지도</a>
-        </div>
+        <a class="btn-link" href="{{ url_for('mapview.shuttle_map') }}">전체 동선 보기 →</a>
     </div>
 
     <div class="shuttle-card-list">
@@ -42,5 +38,17 @@
         {% endfor %}
     </div>
 </section>
+
+<script>
+(function () {
+    document.querySelectorAll('.timetable-details').forEach(function (details) {
+        details.addEventListener('toggle', function () {
+            if (!details.open) return;
+            var next = details.querySelector('.timetable-chip.next') || details.querySelector('.timetable-chip:not(.passed)');
+            if (next) next.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+        });
+    });
+})();
+</script>
 
 {% endblock %}

@@ -9,7 +9,9 @@
         <label>공유받을 사용자</label>
         <select name="to_user_id" required>
             {% for u in users %}
-            <option value="{{ u['id'] }}">{{ u['username'] }}</option>
+            <option value="{{ u['id'] }}">
+                {% if u['display_name'] %}{{ u['department'] }} {{ u['display_name'] }}님 ({{ u['username'] }}){% else %}{{ u['username'] }}{% endif %}
+            </option>
             {% endfor %}
         </select>
 

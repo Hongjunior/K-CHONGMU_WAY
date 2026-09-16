@@ -458,7 +458,10 @@ def unread_notification_count(conn, user_id):
 
 def _other_users(conn, exclude_user_id):
     return conn.execute(
-        text("SELECT id, username FROM users WHERE id != :u ORDER BY username"),
+        text(
+            "SELECT id, username, display_name, department FROM users "
+            "WHERE id != :u ORDER BY username"
+        ),
         {"u": exclude_user_id},
     ).mappings().all()
 
@@ -499,7 +502,7 @@ def share_schedule(schedule_id):
                 ),
                 {
                     "u": to_user_id,
-                    "m": f"{session['username']}님이 '{schedule['title']}' 일정을 공유했습니다.",
+                    "m": f"{session.get('display_name') or session['username']}님이 '{schedule['title']}' 일정을 공유했습니다.",
                     "sid": share_id,
                 },
             )

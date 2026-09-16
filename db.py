@@ -70,12 +70,14 @@ def init_db():
                 role TEXT NOT NULL DEFAULT 'user',
                 department TEXT,
                 job_title TEXT,
+                display_name TEXT,
                 current_worksite_id INTEGER REFERENCES worksites(id),
                 created_at {TS}
             )
         """))
         _ensure_column(conn, "users", "department", "TEXT")
         _ensure_column(conn, "users", "job_title", "TEXT")
+        _ensure_column(conn, "users", "display_name", "TEXT")
 
         conn.execute(text(f"""
             CREATE TABLE IF NOT EXISTS buildings (
