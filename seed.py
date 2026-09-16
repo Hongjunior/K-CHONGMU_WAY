@@ -233,7 +233,7 @@ def seed_demo_data(engine):
 
         # Additional worksites the admin can populate later (사업장 전환용, 아직 건물/시설 데이터 없음).
         for name, desc in [
-            ("SK하이닉스 D&D (성남)", None),
+            ("SK D&D (성남)", None),
             ("삼성전자 GA센터 (용인)", None),
             ("삼성전자 GA센터 (동탄)", None),
         ]:
@@ -241,6 +241,15 @@ def seed_demo_data(engine):
                 text("INSERT INTO worksites (name, description) VALUES (:n, :d)"),
                 {"n": name, "d": desc},
             )
+
+
+def fix_worksite_names(engine):
+    """Idempotent rename for worksites created under an earlier, incorrect name."""
+    with engine.begin() as conn:
+        conn.execute(
+            text("UPDATE worksites SET name = :new WHERE name = :old"),
+            {"new": "SK D&D (성남)", "old": "SK하이닉스 D&D (성남)"},
+        )
 
 
 def _demo_worksite_id(conn):

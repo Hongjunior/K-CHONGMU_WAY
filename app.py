@@ -9,6 +9,7 @@ from seed import (
     ensure_additional_buildings,
     ensure_additional_demo_routes,
     fix_facility_names,
+    fix_worksite_names,
     seed_demo_data,
 )
 
@@ -71,6 +72,7 @@ def root():
 init_db()
 seed_demo_data(engine)
 fix_facility_names(engine)
+fix_worksite_names(engine)
 ensure_additional_demo_routes(engine)
 ensure_additional_buildings(engine)
 

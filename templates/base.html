@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{% block title %}K-총무 WAY{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
@@ -11,8 +14,10 @@
 {% if session.user_id %}
 <aside class="sidebar">
     <a class="brand" href="{{ url_for('root') }}">
-        <img src="{{ url_for('static', filename='img/etners_logo.png') }}" alt="etners">
-        <span>K-총무 WAY</span>
+        <span class="brand-logo-card">
+            <img src="{{ url_for('static', filename='img/etners_logo_charcoal.png') }}" alt="etners">
+        </span>
+        <span class="brand-name">K-총무 WAY</span>
     </a>
 
     <nav class="sidenav">
@@ -61,7 +66,7 @@
             {% endif %}
         </span>
         <a class="status-bell" href="{{ url_for('schedules.notifications_list') }}" title="알림">
-            🔔
+            <span class="status-bell-icon">🔔</span>
             {% if header_unread_count %}<span class="bell-dot"></span>{% endif %}
         </a>
     </header>

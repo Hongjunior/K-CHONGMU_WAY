@@ -39,6 +39,8 @@
                 stroke="{{ hop.color }}" stroke-width="0.7"
                 stroke-dasharray="{{ '2,1.5' if hop.mode == 'walk' else '0' }}"
                 marker-end="url(#hop-arrow-{{ loop.index0 }})"
+                class="day-route-hop-line"
+                data-hop-order="{{ hop.order }}"
             ><title>{{ hop.order }}. {{ hop.from_label }} → {{ hop.to_label }} ({{ '도보' if hop.mode == 'walk' else '셔틀' }} {{ hop.travel_minutes }}분)</title></polyline>
             {% endif %}
             {% endfor %}
@@ -59,7 +61,7 @@
         {% endfor %}
 
         {% for s in stops %}
-        <div class="map-marker marker-stop" style="left: {{ s.pos_x }}%; top: {{ s.pos_y }}%;" title="{{ s.order }}. {{ s.label }} ({{ s.start_time }})">
+        <div class="map-marker marker-stop" style="left: {{ s.pos_x }}%; top: {{ s.pos_y }}%;" title="{{ s.order }}. {{ s.label }} ({{ s.start_time }})" data-stop-order="{{ s.order }}">
             <span class="marker-dot marker-stop-dot">{{ s.order }}</span>
         </div>
         {% endfor %}
@@ -72,13 +74,14 @@
 
     <ol class="day-route-itinerary">
         {% for s in stops %}
-        <li>
+        <li id="itinerary-stop-{{ s.order }}" data-stop-order="{{ s.order }}">
+            <span class="day-route-order">{{ s.order }}</span>
             <span class="day-route-time">{{ s.start_time }}</span>
             <span class="day-route-label">{{ s.label }}</span>
         </li>
         {% if not loop.last %}
         {% set hop = hops[loop.index0] %}
-        <li class="day-route-hop">
+        <li class="day-route-hop" id="itinerary-hop-{{ hop.order }}" data-hop-order="{{ hop.order }}">
             {{ '🚌 셔틀' if hop.mode == 'shuttle' else ('🚶 도보' if hop.mode == 'walk' else '🏢 동일 건물') }}
             {% if hop.travel_minutes is not none %}{{ hop.travel_minutes }}분 소요{% else %}(경로 정보 없음){% endif %}
         </li>
@@ -89,5 +92,47 @@
     <p class="empty-state">이 날짜에 위치가 지정된 일정이 없습니다.</p>
     {% endif %}
 </section>
+
+<script>
+(function () {
+    var stopMarkers = document.querySelectorAll('.marker-stop');
+    var hopLines = document.querySelectorAll('.day-route-hop-line');
+    var allHighlightable = document.querySelectorAll('.day-route-itinerary li');
+
+    function clearHighlight() {
+        allHighlightable.forEach(function (li) { li.classList.remove('itinerary-highlight'); });
+    }
+
+    function highlightStop(order, scroll) {
+        clearHighlight();
+        var li = document.getElementById('itinerary-stop-' + order);
+        if (li) {
+            li.classList.add('itinerary-highlight');
+            if (scroll) li.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+
+    function highlightHop(order, scroll) {
+        clearHighlight();
+        var li = document.getElementById('itinerary-hop-' + order);
+        if (li) {
+            li.classList.add('itinerary-highlight');
+            if (scroll) li.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+
+    stopMarkers.forEach(function (marker) {
+        var order = marker.dataset.stopOrder;
+        marker.addEventListener('mouseenter', function () { highlightStop(order, false); });
+        marker.addEventListener('click', function () { highlightStop(order, true); });
+    });
+
+    hopLines.forEach(function (line) {
+        var order = line.dataset.hopOrder;
+        line.addEventListener('mouseenter', function () { highlightHop(order, false); });
+        line.addEventListener('click', function () { highlightHop(order, true); });
+    });
+})();
+</script>
 
 {% endblock %}
