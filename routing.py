@@ -195,6 +195,18 @@ def build_day_route(conn, worksite_id, items):
             }
         )
 
+    # Two schedules at the same building land on the exact same marker position —
+    # nudge each repeat diagonally so later stop numbers don't render on top of
+    # (and hide) earlier ones.
+    seen_positions = {}
+    for s in stops:
+        key = (s["pos_x"], s["pos_y"])
+        n = seen_positions.get(key, 0)
+        if n:
+            s["pos_x"] = min(96, s["pos_x"] + 3 * n)
+            s["pos_y"] = min(96, s["pos_y"] + 3 * n)
+        seen_positions[key] = n + 1
+
     hops = []
     for i in range(len(located) - 1):
         a_item, b_item = located[i], located[i + 1]
@@ -207,7 +219,10 @@ def build_day_route(conn, worksite_id, items):
         is_shuttle = bool(path) and any(mode == "shuttle" for _n, mode, _m in path)
         same_building = a_b["id"] == b_b["id"]
 
-        points = elbow_points(a_b["pos_x"], a_b["pos_y"], b_b["pos_x"], b_b["pos_y"])
+        # Use the (possibly nudged) stop marker positions, not the raw building
+        # coordinates, so the arrow actually connects to where the numbered
+        # marker was drawn.
+        points = elbow_points(stops[i]["pos_x"], stops[i]["pos_y"], stops[i + 1]["pos_x"], stops[i + 1]["pos_y"])
 
         hops.append(
             {
