@@ -15,10 +15,11 @@ mapview_bp = Blueprint("mapview", __name__, url_prefix="/map")
 # Landmarks that exist on the real, larger campus but are not part of the
 # limited set of buildings Etners staff actually use — shown on the map for
 # scale/realism only, never clickable and never tied to real building rows.
+# (연구동/제2연구센터 used to be here too, but were promoted to real, selectable
+# buildings in seed.py so the schedule facility picker has more choices — see
+# seed.py's ensure_additional_buildings().)
 DECORATIVE_LANDMARKS = [
     {"name": "본관", "pos_x": 8, "pos_y": 8},
-    {"name": "연구동", "pos_x": 12, "pos_y": 60},
-    {"name": "제2연구센터", "pos_x": 35, "pos_y": 88},
     {"name": "복지동", "pos_x": 65, "pos_y": 88},
     {"name": "교육원", "pos_x": 50, "pos_y": 12},
     {"name": "주차타워", "pos_x": 92, "pos_y": 65},

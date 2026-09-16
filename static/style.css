@@ -730,6 +730,14 @@ a {
     box-shadow: 0 0 0 4px rgba(217,108,14,0.35);
 }
 
+.fp-room-info {
+    cursor: default;
+}
+
+.fp-room-info .marker-label {
+    font-style: italic;
+}
+
 /* ---------- Room blocks (facilities drawn to scale on the floor plan) ---------- */
 
 .room-block {

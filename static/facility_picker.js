@@ -112,29 +112,29 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         floor.facilities.forEach(function (fac) {
-            var block = document.createElement("button");
-            block.type = "button";
+            var isNonSelectable = fac.facility_type === "shuttle_stop" || fac.facility_type === "entrance_auth";
+            var block = document.createElement(isNonSelectable ? "div" : "button");
+            if (!isNonSelectable) block.type = "button";
             var isSelected = String(fac.id) === String(input.value);
 
-            if (fac.facility_type === "shuttle_stop" || fac.facility_type === "entrance_auth") {
-                block.className =
-                    "map-marker marker-facility marker-icon fp-room marker-" +
-                    fac.facility_type +
-                    (isSelected ? " selected" : "");
+            if (isNonSelectable) {
+                block.className = "map-marker marker-facility marker-icon fp-room-info marker-" + fac.facility_type;
                 block.style.left = fac.pos_x + "%";
                 block.style.top = fac.pos_y + "%";
+                block.title = fac.name + " (일정 위치로 선택할 수 없는 안내용 지점입니다)";
                 block.innerHTML =
                     '<span class="marker-dot">' + FP_ICON_SVG[fac.facility_type] + "</span>" +
                     '<span class="marker-label">' + fac.name + "</span>";
-            } else {
-                block.className = "room-block fp-room room-" + fac.facility_type + (isSelected ? " selected" : "");
-                block.style.left = fac.pos_x + "%";
-                block.style.top = fac.pos_y + "%";
-                block.style.width = fac.shape_w + "%";
-                block.style.height = fac.shape_h + "%";
-                block.textContent = fac.name;
+                canvasEl.appendChild(block);
+                return;
             }
 
+            block.className = "room-block fp-room room-" + fac.facility_type + (isSelected ? " selected" : "");
+            block.style.left = fac.pos_x + "%";
+            block.style.top = fac.pos_y + "%";
+            block.style.width = fac.shape_w + "%";
+            block.style.height = fac.shape_h + "%";
+            block.textContent = fac.name;
             block.addEventListener("click", function () {
                 input.value = fac.id;
                 selectedEl.textContent = "선택됨: " + fac.name;

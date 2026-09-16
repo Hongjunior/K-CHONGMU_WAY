@@ -5,7 +5,12 @@ from flask import Flask, session
 from sqlalchemy import text
 
 from db import engine, init_db
-from seed import ensure_additional_demo_routes, seed_demo_data
+from seed import (
+    ensure_additional_buildings,
+    ensure_additional_demo_routes,
+    fix_facility_names,
+    seed_demo_data,
+)
 
 app = Flask(__name__)
 app.secret_key = "kchongmu-way-secret-key"
@@ -65,7 +70,9 @@ def root():
 
 init_db()
 seed_demo_data(engine)
+fix_facility_names(engine)
 ensure_additional_demo_routes(engine)
+ensure_additional_buildings(engine)
 
 if __name__ == "__main__":
     app.run(debug=True)
